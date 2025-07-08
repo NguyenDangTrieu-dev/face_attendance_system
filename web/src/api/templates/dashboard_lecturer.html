@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Giảng Viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 60px;
+            color: white;
+        }
+        .sidebar h5 {
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .sidebar a {
+            padding: 12px 20px;
+            display: block;
+            color: white;
+            text-decoration: none;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .list-group-item {
+            border-left: 4px solid #0d6efd;
+        }
+        #attendance-video {
+            width: 720px;
+            height: auto;
+            border-radius: 8px;
+        }
+    #attendance-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 720px;
+        height: auto;
+        pointer-events: none;
+    }
+    /* Style cho dropdown trong modal khóa học */
+    #courseModal .form-select {
+        width: 100%;
+    }
+    #courseModal .row {
+        display: flex;
+        gap: 10px;
+    }
+    #courseModal .col {
+        flex: 1;
+    }
+    /* Style cho modal import sinh viên */
+    #importStudentsModal .form-label {
+        font-weight: bold;
+    }
+    #importStudentsModal .form-control[type="file"] {
+        padding: 0.375rem 0.75rem;
+    }
+    #importStudentsModal .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    #importStudentsModal .btn-success {
+        font-weight: 500;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+
+<body>
+<div class="modal fade" id="faceModal" tabindex="-1" aria-labelledby="faceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="faceModalLabel"> Đăng ký khuôn mặt</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body text-center">
+        <video id="video" autoplay playsinline width="100%" style="max-height: 400px; border-radius: 8px;"></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <p class="mt-3" id="register-status"></p>
+        <button class="btn btn-primary mt-2" onclick="captureAndSend()"> Bắt Đầu Đăng Kí</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="attendance-modal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content shadow-lg rounded-4">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="attendanceModalLabel">Điểm danh realtime bằng khuôn mặt</h5>
+        <button type="button" class="btn-close btn-close-white" onclick="closeAttendanceModal()"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="position-relative d-inline-block">
+          <video id="attendance-video" autoplay muted playsinline class="rounded-3 border border-primary" style="width: 720px; height: auto;"></video>
+          <canvas id="attendance-canvas" class="position-absolute top-0 start-0" style="pointer-events: none;"></canvas>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-danger" onclick="closeAttendanceModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal QR Code -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow rounded-4">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="qrModalLabel"> Quét mã QR để điểm danh</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div id="qr-container" class="mb-3"></div>
+        <p>Hãy dùng ứng dụng điểm danh để quét mã QR này.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal them sua-->
+ <!-- Modal Thêm/Sửa khóa học -->
+<div class="modal fade" id="courseModal" tabindex="-1" aria-labelledby="courseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="courseModalLabel">📘 Thêm/Sửa khóa học</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <form id="courseForm">
+                    <input type="hidden" id="courseId">
+                    <div class="mb-3">
+                        <label for="courseName" class="form-label">Tên khóa học</label>
+                        <input type="text" class="form-control" id="courseName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Học kỳ</label>
+                        <div class="row">
+                            <div class="col">
+                                <select class="form-select" id="courseSemester" required>
+                                    <option value="" disabled selected>Chọn học kỳ</option>
+                                    <option value="HK1">HK1</option>
+                                    <option value="HK2">HK2</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select class="form-select" id="courseYear" required>
+                                    <option value="" disabled selected>Chọn năm</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lecturerId" class="form-label">ID Giảng viên</label>
+                        <input type="text" class="form-control" id="lecturerId" value="{{ user.user_id }}" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Modal Import sinh vien từ excel-->
+<!-- Modal Import Sinh viên -->
+<div class="modal fade" id="importStudentsModal" tabindex="-1" aria-labelledby="importStudentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="importStudentsModalLabel">📥 Import Sinh viên từ Excel</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importStudentsForm">
+                    <div class="mb-3">
+                        <label for="studentFile" class="form-label">Chọn file Excel</label>
+                        <input type="file" class="form-control" id="studentFile" accept=".xlsx, .xls" required>
+                        <small class="form-text text-muted">File phải chứa các cột: <code>student_id</code>, <code>full_name</code>.</small>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Tải lên</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal diem danh bằng hình anh-->
+ <!-- Modal Upload Photos for Attendance -->
+<div class="modal fade" id="uploadPhotosModal" tabindex="-1" aria-labelledby="uploadPhotosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="uploadPhotosModalLabel">📸 Tải lên ảnh để điểm danh</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadPhotosForm">
+                    <div class="mb-3">
+                        <label for="photoFiles" class="form-label">Chọn các ảnh</label>
+                        <input type="file" class="form-control" id="photoFiles" accept=".png, .jpg, .jpeg" multiple required>
+                        <small class="form-text text-muted">Hỗ trợ định dạng: PNG, JPG, JPEG. Mỗi ảnh có thể chứa nhiều khuôn mặt.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Tải lên và điểm danh</button>
+                </form>
+                <div id="upload-status" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Sidebar -->
+<!-- Sidebar -->
+<div class="sidebar">
+    <h5> Giảng viên: {{ user.full_name }}</h5>
+    <a href="#" onclick="showTab('courses')"> Khóa học</a>
+    <a href="#" onclick="showTab('students')"> Sinh viên</a>
+    <a href="#" onclick="showTab('attendance')"> Lịch sử điểm danh</a>
+    <a href="/logout" class="text-danger"> Đăng xuất</a>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <ul class="nav nav-tabs" id="mainTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-courses" data-bs-toggle="tab" data-bs-target="#courses" type="button" role="tab"> Khóa học</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-students" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab"> Sinh viên</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-attendance" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab"> Lịch sử điểm danh</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-statistics" data-bs-toggle="tab" data-bs-target="#statistics" type="button" role="tab">📊 Thống kê</button>
+        </li>
+    </ul>
+<div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="courses" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>📘 Danh sách khóa học</h5>
+            <button class="btn btn-primary" onclick="openCourseModal()">➕ Thêm khóa học</button>
+        </div>
+        <div id="course-list" class="row"></div>
+    </div>
+
+    <div class="tab-pane fade" id="students" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 id="student-title" class="mb-0">🧑‍🎓 Danh sách sinh viên - Cơ sở dữ liệu và Trí tuệ Nhân tạo</h5>
+            <button class="btn btn-primary" onclick="openAttendanceModal()">🕵️‍♂️ Điểm danh realtime</button>
+            <button class="btn btn-info ms-2" onclick="openUploadPhotosModal()">📸 Điểm danh bằng ảnh</button>
+            <button onclick="showQR(currentCourseId, currentCourseName)">Hiện mã QR điểm danh</button>
+            <button class="btn btn-success ms-2" onclick="openImportStudentsModal()">📥 Import Sinh viên</button>
+            <div id="qr-box"></div>
+
+        </div>
+        <div id="student-list" class="list-group"></div>
+    </div>
+
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
+        <h5 id="attendance-title" class="mb-3"></h5>
+        <div id="attendance-list" class="list-group"></div>
+    </div>
+
+    <div class="tab-pane fade" id="statistics" role="tabpanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>📊 Thống kê điểm danh</h5>
+            <button class="btn btn-secondary" onclick="exportStatistics()">📤 Xuất Excel</button>
+        </div>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ tên</th>
+                    <th>Số buổi đi học</th>
+                    <th>Số buổi vắng</th>
+                    <th>Tỉ lệ đi học</th>
+                </tr>
+            </thead>
+            <tbody id="statistics-body">
+                <!-- Dữ liệu thống kê sẽ được thêm ở đây -->
+            </tbody>
+        </table>
+        <h5 class="mt-4">📈 Biểu đồ tỉ lệ điểm danh</h5>
+        <canvas id="attendanceChart" width="400" height="200"></canvas>
+
+    </div>
+</div>
+
+</div>
+
+<script>
+const lecturerId = "{{ user.user_id }}";
+
+window.onload = function () {
+    loadCourses();
+};
+let lastLoadedCourseId = null;
+let currentCourseId = null;
+let currentCourseName = '';
+let isFetchingAttendance = false;
+let lastTabSwitchTime = 0;
+const debounceDelay = 300;
+let isProgrammaticTabSwitch = false; // New flag
+
+function showTab(tabId, courseId = null, courseName = '') {
+    const now = Date.now();
+    if (now - lastTabSwitchTime < debounceDelay) {
+        console.log("Debouncing showTab call for tabId:", tabId);
+        return;
+    }
+    lastTabSwitchTime = now;
+
+    // Set the flag to indicate this is a programmatic call
+    isProgrammaticTabSwitch = true;
+
+    const tabButton = document.querySelector(`#tab-${tabId}`);
+    if (!tabButton) {
+        console.error(`Không tìm thấy nút tab với id: tab-${tabId}`);
+        return;
+    }
+    const tab = new bootstrap.Tab(tabButton);
+    tab.show();
+
+    // Reset the flag after the tab is shown
+    setTimeout(() => {
+        isProgrammaticTabSwitch = false;
+    }, 0);
+
+    if (tabId === 'attendance') {
+        if (courseId) {
+            currentCourseId = courseId;
+            currentCourseName = courseName;
+        }
+
+        const list = document.getElementById("attendance-list");
+        const title = document.getElementById("attendance-title");
+
+        if (!currentCourseId) {
+            title.textContent = " Lịch sử điểm danh";
+            list.innerHTML = "<p>Vui lòng chọn một khóa học để xem lịch sử điểm danh.</p>";
+            return;
+        }
+
+        if (lastLoadedCourseId === currentCourseId) {
+            console.log(" Attendance đã được load rồi cho courseId:", currentCourseId);
+            title.textContent = ` Lịch sử điểm danh - ${currentCourseName}`;
+            return;
+        }
+
+        if (isFetchingAttendance) {
+            console.log("Đang fetch attendance, bỏ qua...");
+            return;
+        }
+
+        loadAttendance(currentCourseId, currentCourseName);
+    }
+}
+function loadAttendance(courseId, courseName) {
+    if (isFetchingAttendance) {
+        console.log("Đang fetch attendance, bỏ qua...");
+        return;
+    }
+
+    isFetchingAttendance = true;
+    console.log("Loading attendance for courseId:", courseId);
+
+    fetch(`/api/courses/${courseId}/attendance`)
+        .then(res => {
+            console.log("Fetch response status:", res.status);
+            if (!res.ok) {
+                throw new Error(`HTTP error: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log("Attendance data:", data);
+            lastLoadedCourseId = courseId;
+
+            const list = document.getElementById("attendance-list");
+            const title = document.getElementById("attendance-title");
+            if (!list || !title) {
+                console.error("attendance-list or attendance-title element not found in DOM");
+                return;
+            }
+
+            title.textContent = ` Lịch sử điểm danh - ${courseName}`;
+            list.innerHTML = "";
+
+            if (data.length === 0) {
+                list.innerHTML = "<p>Không có dữ liệu điểm danh.</p>";
+                return;
+            }
+
+            data.forEach(att => {
+                const div = document.createElement("div");
+                div.className = "list-group-item";
+                div.innerHTML = `
+                    <strong>${att.student_name}</strong> |
+                    <span>${new Date(att.time).toLocaleString('vi-VN', {
+                        dateStyle: 'short',
+                        timeStyle: 'short'
+                    })}</span> |
+                    ${att.recognized ? "<span class='text-success'> Đã nhận diện</span>" : "<span class='text-danger'> Chưa nhận</span>"}
+                    ${att.image_base64 ? `<br><img src="${att.image_base64}" class="rounded mt-2" style="max-height: 100px;">` : ""}
+                `;
+                list.appendChild(div);
+            });
+        })
+        .catch(err => {
+            console.error("Error loading attendance:", err);
+            const list = document.getElementById("attendance-list");
+            if (list) {
+                list.innerHTML = `<p class="text-danger">Lỗi tải dữ liệu điểm danh: ${err}</p>`;
+            }
+        })
+        .finally(() => {
+            isFetchingAttendance = false;
+        });
+}
+
+function loadCourses() {
+    fetch(`/api/lecturer/${lecturerId}/courses`)
+        .then(res => res.json())
+        .then(data => {
+            const courseList = document.getElementById("course-list");
+            courseList.innerHTML = "";
+            data.forEach(course => {
+                const col = document.createElement("div");
+                col.className = "col-md-6 mb-3";
+                col.innerHTML = `
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">${course.name}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Học kỳ:</strong> ${course.semester}</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadStudents(${course.id}, '${course.name}')">👨‍🎓 Xem SV</button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2"
+                                onclick="showTab('attendance', ${course.id}, '${course.name}')">
+                                📝 Lịch sử điểm danh
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm ms-2"
+                                onclick="openCourseModal({id: ${course.id}, name: '${course.name}', semester: '${course.semester}'})">
+                                ✏️ Sửa
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm ms-2"
+                                onclick="deleteCourse(${course.id})">
+                                🗑️ Xóa
+                            </button>
+                        </div>
+                    </div>
+                `;
+                courseList.appendChild(col);
+            });
+        })
+        .catch(err => {
+            console.error('Lỗi khi tải danh sách khóa học:', err);
+            showToast('❌ Lỗi tải danh sách khóa học', 'danger');
+        });
+}
+
+function loadStudents(courseId, courseName) {
+    currentCourseId = courseId;
+    currentCourseName = courseName; // Set the course name
+    fetch(`/api/courses/${courseId}/students_with_embedding`)
+        .then(res => res.json())
+        .then(data => {
+            showTab('students');
+            document.getElementById("student-title").textContent = ` Danh sách sinh viên - ${courseName}`;
+            const studentList = document.getElementById("student-list");
+            studentList.innerHTML = "";
+
+            data.forEach(st => {
+                const div = document.createElement("div");
+                div.className = "list-group-item d-flex justify-content-between align-items-center";
+
+                const info = document.createElement("span");
+                info.innerHTML = `<strong>${st.id}</strong> - ${st.full_name}`;
+
+                const btn = document.createElement("button");
+                btn.className = `btn btn-sm ${st.has_embedding ? 'btn-warning' : 'btn-primary'}`;
+                btn.innerHTML = st.has_embedding ? ' Đăng ký lại' : ' Đăng ký';
+                btn.onclick = () => handleRegisterFace(st.id, st.full_name, st.has_embedding);
+
+                div.appendChild(info);
+                div.appendChild(btn);
+
+                studentList.appendChild(div);
+            });
+        });
+}
+function showToast(message, type = 'success') {
+    // Tạo container cho toast nếu chưa có
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Tạo toast
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toast);
+
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+
+    setTimeout(() => {
+        bsToast.hide();
+        toast.remove();
+    }, 3000);
+}
+
+function showQR(courseId, courseName) {
+    const qrContainer = document.getElementById("qr-container");
+    qrContainer.innerHTML = "";
+
+    const img = document.createElement("img");
+    img.src = `/api/qr_ip?course_id=${encodeURIComponent(courseId)}&course_name=${encodeURIComponent(courseName)}`;
+    img.alt = "QR chứa thông tin điểm danh";
+    img.style.width = "256px";
+    img.style.height = "256px";
+
+    img.onload = () => {
+        qrContainer.appendChild(img);
+        const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+        qrModal.show();
+    };
+    img.onerror = () => {
+        qrContainer.innerHTML = "<p class='text-danger'>Lỗi: Không thể tải mã QR</p>";
+        const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+        qrModal.show();
+    };
+}
+
+let currentStudentId = null;
+let currentStudentName = null;
+let stream = null;
+
+async function handleRegisterFace(studentId, fullName, hasEmbedding) {
+    currentStudentId = studentId;
+    currentStudentName = fullName;
+
+    const modal = new bootstrap.Modal(document.getElementById('faceModal'));
+    modal.show();
+
+    const video = document.getElementById('video');
+    try {
+        stream = await setupWebcam(video);
+    } catch (err) {
+        console.error("Failed to setup webcam in handleRegisterFace:", err);
+        const status = document.getElementById('register-status');
+        status.innerHTML = "<span class='text-danger'> Không thể truy cập webcam</span>";
+    }
+}
+
+    function captureAndSend() {
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const status = document.getElementById("register-status");
+        const ctx = canvas.getContext('2d');
+
+        const capturedImages = [];
+        let count = 0;
+        const totalCaptures = 10;
+        const delay = 600; // 0.6 giây
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        status.innerHTML = "<span class='text-info'> Đang chụp ảnh...</span>";
+
+        const capture = () => {
+            ctx.drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                capturedImages.push(blob);
+                count++;
+
+                if (count < totalCaptures) {
+                    setTimeout(capture, delay); // chụp tiếp
+                } else {
+                    // Gửi tất cả ảnh lên server
+                    const formData = new FormData();
+                    formData.append("student_id", currentStudentId);
+                    formData.append("name", currentStudentName);
+                    for (let i = 0; i < capturedImages.length; i++) {
+                        formData.append("files", capturedImages[i], `frame_${i}.jpg`);
+                    }
+
+                    fetch('/register', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            status.innerHTML = "<span class='text-success'> Đăng ký thành công!</span>";
+                        } else {
+                            status.innerHTML = "<span class='text-danger'> Đăng ký thất bại: " + result.message + "</span>";
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        status.innerHTML = "<span class='text-danger'> Lỗi kết nối đến máy chủ</span>";
+                    });
+                }
+            }, 'image/jpeg');
+        };
+
+        capture(); // bắt đầu chụp ảnh
+    }
+    // Đóng modal và dừng webcam
+    document.getElementById("faceModal").addEventListener('hidden.bs.modal', () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    });
+
+    async function setupWebcam(videoElement) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            await new Promise(resolve => {
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play(); // Ensure the video plays after metadata is loaded
+                    resolve();
+                };
+            });
+            return stream;
+        } catch (err) {
+            alert("Không thể truy cập webcam!");
+            console.error("Webcam error:", err);
+            throw err; // Rethrow to handle in the calling function
+        }
+    }
+    async function openAttendanceModal() {
+    const video = document.getElementById('attendance-video');
+    const canvas = document.getElementById('attendance-canvas');
+    const context = canvas.getContext('2d');
+
+    if (!currentCourseId) {
+        alert("Vui lòng chọn một khóa học trước khi điểm danh!");
+        return;
+    }
+
+    if (window.attendanceStream) {
+        window.attendanceStream.getTracks().forEach(track => track.stop());
+        window.attendanceStream = null;
+    }
+    if (window.attendanceInterval) {
+        clearInterval(window.attendanceInterval);
+        window.attendanceInterval = null;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('attendance-modal'));
+    modal.show();
+
+    try {
+        const stream = await setupWebcam(video);
+        window.attendanceStream = stream;
+
+        video.play();
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        console.log("Canvas size:", canvas.width, canvas.height);
+        console.log("Video size:", video.videoWidth, video.videoHeight);
+
+        let lastRecognitions = []; // Lưu trữ nhiều khuôn mặt
+        let lastRecognitionTime = 0;
+        const PERSISTENCE_DURATION = 3000;
+
+        window.attendanceInterval = setInterval(() => {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+                formData.append('course_id', currentCourseId);
+
+                fetch('/recognize_siamese', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    console.log("API response:", data);
+                    if (data.error) {
+                        console.warn("Lỗi nhận diện:", data.error);
+                        return;
+                    }
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(result => {
+                            const name = result.name;
+                            showToast(`Đã điểm danh: ${name}`);
+                        });
+                        lastRecognitions = data; // Lưu toàn bộ kết quả
+                        lastRecognitionTime = Date.now();
+                    } else {
+                        console.warn("No recognition data:", data);
+                    }
+                })
+                .catch(err => console.error("Lỗi gửi API:", err));
+            }, 'image/jpeg', 0.9);
+
+            const currentTime = Date.now();
+            if (lastRecognitions.length > 0 && (currentTime - lastRecognitionTime) < PERSISTENCE_DURATION) {
+                lastRecognitions.forEach(recognition => {
+                    const bbox = recognition.bbox;
+                    const name = recognition.name;
+                    const similarity = recognition.similarity ? `(${recognition.similarity * 100}%)` : '';
+
+                    if (!Array.isArray(bbox) || bbox.length !== 4) {
+                        console.warn("Invalid bbox format:", bbox);
+                        return;
+                    }
+
+                    console.log("Drawing box:", { startX: bbox[0], startY: bbox[1], endX: bbox[2], endY: bbox[3], name });
+
+                    const scaleX = canvas.width / video.videoWidth;
+                    const scaleY = canvas.height / video.videoHeight;
+
+                    const scaledStartX = bbox[0] * scaleX;
+                    const scaledStartY = bbox[1] * scaleY;
+                    const scaledEndX = bbox[2] * scaleX;
+                    const scaledEndY = bbox[3] * scaleY;
+                    const width = scaledEndX - scaledStartX;
+                    const height = scaledEndY - scaledStartY;
+
+                    if (isNaN(scaledStartX) || isNaN(scaledStartY) || isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+                        console.warn("Invalid box coordinates:", { scaledStartX, scaledStartY, width, height });
+                        return;
+                    }
+
+                    // Vẽ khung viền
+                    context.strokeStyle = 'green';
+                    context.lineWidth = 4;
+                    context.beginPath();
+                    context.rect(scaledStartX, scaledStartY, width, height);
+                    context.stroke();
+
+                    // Thêm tên và độ tương đồng
+                    context.fillStyle = 'green';
+                    context.font = '20px Arial';
+                    context.fillText(`${name} ${similarity}`, scaledStartX, scaledStartY - 10);
+                });
+            } else {
+                console.log("No valid recognitions to draw");
+            }
+        }, 500);
+    } catch (error) {
+        console.error("Không thể mở webcam:", error);
+        alert("Không thể mở webcam!");
+    }
+}
+
+    function closeAttendanceModal() {
+        const modalEl = document.getElementById('attendance-modal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+
+        if (window.attendanceStream) {
+            window.attendanceStream.getTracks().forEach(track => track.stop());
+            window.attendanceStream = null;
+        }
+
+        if (window.attendanceInterval) {
+            clearInterval(window.attendanceInterval);
+            window.attendanceInterval = null;
+        }
+        const video = document.getElementById('attendance-video');
+        video.srcObject = null;
+
+        // Clear the canvas
+        const canvas = document.getElementById('attendance-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+
+function populateYears() {
+    const yearSelect = document.getElementById('courseYear');
+    yearSelect.innerHTML = '<option value="" disabled selected>Chọn năm</option>';
+    const currentYear = new Date().getFullYear(); // Lấy năm hiện tại (2025)
+    const startYear = 2020; // Năm bắt đầu (có thể điều chỉnh nếu cần)
+    const endYear = currentYear + 1; // Thêm năm tiếp theo (2026)
+    for (let year = startYear; year <= endYear; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+    }
+}
+// Gọi API để tạo khóa học
+function createCourse(courseData) {
+    fetch('/api/courses', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(courseData)
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.error) {
+            showToast(`❌ Lỗi: ${data.error}`, 'danger');
+        } else {
+            showToast('✅ Thêm khóa học thành công', 'success');
+            loadCourses(); // Tải lại danh sách khóa học
+            bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide();
+        }
+    })
+    .catch(err => {
+        console.error('Lỗi khi tạo khóa học:', err);
+        showToast('❌ Lỗi kết nối đến máy chủ', 'danger');
+    });
+}
+
+function deleteCourse(courseId) {
+    if (!confirm('Bạn có chắc muốn xóa khóa học này?')) return;
+
+    fetch(`/api/courses/${courseId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.error) {
+            showToast(`❌ Lỗi: ${data.error}`, 'danger');
+        } else {
+            showToast('✅ Xóa khóa học thành công', 'success');
+            loadCourses(); // Tải lại danh sách khóa học
+        }
+    })
+    .catch(err => {
+        console.error('Lỗi khi xóa khóa học:', err);
+        showToast('❌ Lỗi kết nối đến máy chủ', 'danger');
+    });
+}
+// Gọi API để sửa khóa học
+function updateCourse(courseId, courseData) {
+    fetch(`/api/courses/${courseId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(courseData)
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP error: ${res.status}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.error) {
+            showToast(`❌ Lỗi: ${data.error}`, 'danger');
+        } else {
+            showToast('✅ Cập nhật khóa học thành công', 'success');
+            loadCourses(); // Tải lại danh sách khóa học
+            bootstrap.Modal.getInstance(document.getElementById('courseModal')).hide();
+        }
+    })
+    .catch(err => {
+        console.error('Lỗi khi cập nhật khóa học:', err);
+        showToast('❌ Lỗi kết nối đến máy chủ', 'danger');
+    });
+}
+function openCourseModal(course = null) {
+    const modal = new bootstrap.Modal(document.getElementById('courseModal'));
+    const form = document.getElementById('courseForm');
+    const courseIdInput = document.getElementById('courseId');
+    const courseNameInput = document.getElementById('courseName');
+    const courseSemesterSelect = document.getElementById('courseSemester');
+    const courseYearSelect = document.getElementById('courseYear');
+    const modalTitle = document.getElementById('courseModalLabel');
+
+    // Điền danh sách năm
+    populateYears();
+
+    if (course) {
+        // Sửa khóa học
+        modalTitle.textContent = '📘 Sửa khóa học';
+        courseIdInput.value = course.id;
+        courseNameInput.value = course.name;
+        const [semester, year] = course.semester ? course.semester.split('-') : ['', ''];
+        courseSemesterSelect.value = semester || '';
+        courseYearSelect.value = year || '';
+    } else {
+        // Thêm khóa học mới
+        modalTitle.textContent = '📘 Thêm khóa học';
+        courseIdInput.value = '';
+        courseNameInput.value = '';
+        courseSemesterSelect.value = '';
+        courseYearSelect.value = '';
+    }
+
+    modal.show();
+
+    form.onsubmit = function (e) {
+        e.preventDefault();
+        if (!courseNameInput.value || !courseSemesterSelect.value || !courseYearSelect.value) {
+            showToast('❌ Vui lòng điền đầy đủ thông tin', 'danger');
+            return;
+        }
+
+        const courseId = courseIdInput.value;
+        const semester = `${courseSemesterSelect.value}-${courseYearSelect.value}`;
+        const courseData = {
+            name: courseNameInput.value,
+            semester: semester,
+            lecturer_id: lecturerId
+        };
+
+        if (courseId) {
+            updateCourse(courseId, courseData);
+        } else {
+            createCourse(courseData);
+        }
+    };
+}
+function openImportStudentsModal() {
+    if (!currentCourseId) {
+        showToast('❌ Vui lòng chọn một khóa học trước', 'danger');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('importStudentsModal'));
+    const form = document.getElementById('importStudentsForm');
+    const fileInput = document.getElementById('studentFile');
+
+    // Reset form khi mở modal
+    form.reset();
+
+    modal.show();
+
+    // Xử lý submit form
+    form.onsubmit = function (e) {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        console.log('Selected file:', file); // Debug
+        if (!file || !file.name) {
+            showToast('❌ Vui lòng chọn file Excel', 'danger');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        console.log('Sending request to:', `/api/courses/${currentCourseId}/import_students`); // Debug
+
+        fetch(`/api/courses/${currentCourseId}/import_students`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => {
+            console.log('Response status:', res.status); // Debug
+            if (!res.ok) {
+                throw new Error(`HTTP error: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log('Response data:', data); // Debug
+            if (data.error) {
+                showToast(`❌ Lỗi: ${data.error}`, 'danger');
+            } else {
+                showToast('✅ Import sinh viên thành công', 'success');
+                loadStudents(currentCourseId, currentCourseName); // Tải lại danh sách sinh viên
+                modal.hide(); // Đóng modal
+            }
+        })
+        .catch(err => {
+            console.error('Lỗi khi import sinh viên:', err);
+            showToast('❌ Lỗi kết nối đến máy chủ', 'danger');
+        });
+    };
+}
+let attendanceChart = null;
+
+function loadStatistics(courseId) {
+  if (!courseId) {
+    showToast('❌ Vui lòng chọn một khóa học trước', 'danger');
+    return;
+  }
+
+  const tbody = document.getElementById("statistics-body");
+  tbody.innerHTML = `<tr><td colspan="4">⏳ Đang tải dữ liệu...</td></tr>`;
+
+  fetch(`/api/courses/${courseId}/attendance/summary`)
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      tbody.innerHTML = ""; 
+
+      if (data.length === 0) {
+        showToast('ℹ️ Khóa học chưa có dữ liệu điểm danh.', 'info');
+        return;
+      }
+
+      const labels = [];
+      const attendedData = [];
+      const absentData = [];
+
+      data.forEach(stat => {
+        labels.push(stat.full_name);
+        attendedData.push(stat.attended);
+        absentData.push(stat.absent);
+
+        const row = document.createElement("tr");
+        const total = stat.attended + stat.absent;
+        const ratio = total === 0 ? 0 : (stat.attended / total * 100).toFixed(2);
+        row.innerHTML = `
+        <td>${stat.student_id}</td>
+        <td>${stat.full_name}</td>
+        <td>${stat.attended}</td>
+        <td>${stat.absent}</td>
+        <td>${ratio}%</td>
+        `;
+        tbody.appendChild(row);
+      });
+        const ratioData = data.map(stat => {
+        const total = stat.attended + stat.absent;
+        return total === 0 ? 0 : (stat.attended / total * 100).toFixed(2); // phần trăm
+        });
+
+        // Vẽ biểu đồ đường
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        if (attendanceChart) {
+        attendanceChart.destroy();
+        }
+        attendanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels, // tên sinh viên
+            datasets: [{
+            label: 'Tỉ lệ đi học (%)',
+            data: ratioData,
+            fill: false,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            tension: 0.3,
+            pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+            legend: { position: 'top' },
+            title: {
+                display: true,
+                text: 'Biểu đồ tỉ lệ sinh viên đi học (%)'
+            },
+            tooltip: {
+                callbacks: {
+                label: function(context) {
+                    return context.raw + '%';
+                }
+                }
+            }
+            },
+            scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                title: {
+                display: true,
+                text: 'Tỉ lệ (%)'
+                }
+            },
+            x: {
+                ticks: {
+                maxRotation: 45,
+                minRotation: 45,
+                autoSkip: false
+                }
+            }
+            }
+        }
+        });
+    })
+    .catch(err => {
+      console.error('Lỗi khi tải thống kê:', err);
+      showToast('❌ Lỗi tải dữ liệu thống kê', 'danger');
+    });
+}
+
+
+function exportStatistics() {
+    if (!currentCourseId) {
+        showToast('❌ Vui lòng chọn một khóa học trước', 'danger');
+        return;
+    }
+
+    // Lấy dữ liệu từ bảng thống kê
+    const tbody = document.getElementById("statistics-body");
+    const rows = tbody.getElementsByTagName("tr");
+    if (rows.length === 0 || tbody.innerHTML.includes("Đang tải dữ liệu...")) {
+        showToast('❌ Chưa có dữ liệu thống kê để xuất', 'danger');
+        return;
+    }
+
+    const data = [];
+    // Thêm tiêu đề cột
+    const headers = ["Mã SV", "Họ tên", "Số buổi đi học", "Số buổi vắng", "Tỉ lệ đi học (%)"];
+    data.push(headers);
+
+    // Lấy dữ liệu từ các hàng
+    for (let row of rows) {
+        if (!row.innerHTML.includes("Đang tải dữ liệu...")) {
+            const cols = row.getElementsByTagName("td");
+            const rowData = [];
+            for (let col of cols) {
+                rowData.push(col.textContent.trim());
+            }
+            data.push(rowData);
+        }
+    }
+
+    if (data.length <= 1) { // Chỉ có tiêu đề, không có dữ liệu
+        showToast('❌ Chưa có dữ liệu thống kê để xuất', 'danger');
+        return;
+    }
+
+    // Tạo workbook và worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Tự động điều chỉnh độ rộng cột dựa trên nội dung
+    const colWidths = data[0].map((_, colIdx) => {
+        return Math.max(...data.map(row => (row[colIdx] ? row[colIdx].toString().length : 0))) + 2;
+    });
+    ws['!cols'] = colWidths.map(wch => ({ wch }));
+
+    // Định dạng tiêu đề với gradient màu
+    const headerRange = XLSX.utils.decode_range(ws['!ref']);
+    headerRange.s.r = 0; // Dòng đầu tiên
+    headerRange.e.r = 0; // Chỉ định dạng dòng tiêu đề
+    const headerStyle = {
+        font: { name: "Calibri", bold: true, color: { rgb: "FFFFFF" } },
+        fill: {
+            patternType: "gradient",
+            fgColor: { rgb: "4F81BD" }, // Màu xanh đậm
+            bgColor: { rgb: "ADD8E6" }  // Màu xanh nhạt
+        },
+        alignment: { horizontal: "center", vertical: "middle" },
+        border: {
+            top: { style: "medium" },
+            bottom: { style: "medium" },
+            left: { style: "medium" },
+            right: { style: "medium" }
+        }
+    };
+    const range = XLSX.utils.encode_range(headerRange);
+    const headerCells = [];
+    for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[cellAddress]) ws[cellAddress] = { v: data[0][C] };
+        headerCells.push(ws[cellAddress]);
+    }
+    headerCells.forEach(cell => {
+        if (!cell.s) cell.s = {};
+        Object.assign(cell.s, headerStyle);
+    });
+
+    // Định dạng dữ liệu với viền đẹp và định dạng số
+    const dataRange = XLSX.utils.decode_range(ws['!ref']);
+    dataRange.s.r = 1; // Bắt đầu từ dòng thứ 2 (dữ liệu)
+    const dataStyle = {
+        alignment: { horizontal: "center", vertical: "middle" },
+        border: {
+            top: { style: "thin" },
+            bottom: { style: "thin" },
+            left: { style: "thin" },
+            right: { style: "thin" }
+        }
+    };
+    for (let R = dataRange.s.r; R <= dataRange.e.r; ++R) {
+        for (let C = dataRange.s.c; C <= dataRange.e.c; ++C) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellAddress]) ws[cellAddress] = { v: data[R][C] };
+            if (!ws[cellAddress].s) ws[cellAddress].s = {};
+            Object.assign(ws[cellAddress].s, dataStyle);
+            // Định dạng cột "Tỉ lệ đi học (%)" với ký hiệu %
+            if (C === 4 && ws[cellAddress].v) {
+                ws[cellAddress].z = "0.00%"; // Định dạng số với 2 chữ số thập phân
+                ws[cellAddress].v = parseFloat(ws[cellAddress].v) / 100; // Chuyển % về giá trị thập phân (Excel sẽ tự nhân 100)
+            }
+        }
+    }
+
+    // Thêm tiêu đề phụ (tuỳ chọn)
+    ws['A1'] = { v: `BÁO CÁO THỐNG KÊ ĐIỂM DANH - ${currentCourseName}`, t: "s" };
+    ws['A1'].s = {
+        font: { name: "Calibri", bold: true, size: 14, color: { rgb: "000000" } },
+        alignment: { horizontal: "center", vertical: "middle" }
+    };
+    XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A2" }); // Dịch dòng xuống 1 để chừa chỗ cho tiêu đề
+
+    // Thêm worksheet vào workbook
+    XLSX.utils.book_append_sheet(wb, ws, "ThongKeDiemDanh");
+
+    // Tạo file Excel và tải xuống
+    const currentDate = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }).replace(/[,/:]/g, '-');
+    const fileName = `ThongKe_DiemDanh_${currentCourseName}_${currentCourseId}_${currentDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    showToast('✅ Xuất file Excel thành công', 'success');
+}
+
+document.getElementById("tab-statistics").addEventListener("click", () => {
+  if (typeof currentCourseId !== "undefined" && currentCourseId) {
+    loadStatistics(currentCourseId);
+  } else {
+    showToast('❌ Vui lòng chọn một khóa học trước', 'danger');
+  }
+});
+
+
+document.getElementById("tab-statistics").addEventListener("click", () => {
+    if (currentCourseId) {
+        loadStatistics(currentCourseId);
+    }
+});function openUploadPhotosModal() {
+    if (!currentCourseId) {
+        showToast('❌ Vui lòng chọn một khóa học trước', 'danger');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('uploadPhotosModal'));
+    const form = document.getElementById('uploadPhotosForm');
+    const fileInput = document.getElementById('photoFiles');
+    const statusDiv = document.getElementById('upload-status');
+
+    // Reset form và trạng thái
+    form.reset();
+    statusDiv.innerHTML = '';
+
+    modal.show();
+
+    form.onsubmit = async function (e) {
+        e.preventDefault();
+        const files = fileInput.files;
+        if (files.length === 0) {
+            showToast('❌ Vui lòng chọn ít nhất một ảnh', 'danger');
+            return;
+        }
+
+        // Kiểm tra định dạng và kích thước
+        for (let file of files) {
+            if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+                showToast(`❌ File ${file.name} không đúng định dạng. Chỉ hỗ trợ PNG, JPG, JPEG`, 'danger');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) { // 5MB
+                showToast(`❌ File ${file.name} quá lớn. Kích thước tối đa là 5MB`, 'danger');
+                return;
+            }
+        }
+
+        statusDiv.innerHTML = '<span class="text-info">⏳ Đang xử lý điểm danh...</span>';
+
+        const formData = new FormData();
+        formData.append('course_id', currentCourseId);
+        for (let file of files) {
+            formData.append('files', file);
+        }
+
+        try {
+            const response = await fetch('/recognize_siamese_photos', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                if (data.length > 0) {
+                    statusDiv.innerHTML = '<span class="text-success">Đã nhận diện:</span><ul>';
+                    data.forEach(result => {
+                        if (result.name && result.name !== "Unknown") {
+                            showToast(`✅ Đã điểm danh: ${result.name} (${(result.similarity * 100).toFixed(2)}%)`, 'success');
+                            statusDiv.innerHTML += `<li>${result.name} (${(result.similarity * 100).toFixed(2)}%)</li>`;
+                        }
+                    });
+                    statusDiv.innerHTML += '</ul>';
+                    if (!data.some(result => result.name !== "Unknown")) {
+                        statusDiv.innerHTML = '<span class="text-warning">Không nhận diện được ai trong ảnh.</span>';
+                    }
+                } else {
+                    statusDiv.innerHTML = '<span class="text-warning">Không nhận diện được ai trong ảnh.</span>';
+                }
+            } else {
+                statusDiv.innerHTML = `<span class="text-danger">Lỗi: ${data.error}</span>`;
+                showToast(`❌ ${data.error}`, 'danger');
+            }
+        } catch (err) {
+            console.error('Lỗi khi gửi ảnh:', err);
+            statusDiv.innerHTML = '<span class="text-danger">Lỗi kết nối đến máy chủ.</span>';
+            showToast('❌ Lỗi kết nối đến máy chủ', 'danger');
+        }
+    };
+}
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

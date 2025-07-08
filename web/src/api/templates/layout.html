@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nhận diện khuôn mặt</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar bg-dark text-white p-4 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 text-center">Quản Lý Điểm Danh</h2>
+        <ul class="nav flex-column" id="myTab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link text-white active rounded" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-section" role="tab" aria-controls="register-section" aria-selected="true">
+                    <i class="fas fa-user-plus me-2"></i> Đăng ký khuôn mặt
+                </a>
+            </li>
+            <li class="nav-item">
+                <!-- Nhận diện khuôn mặt với nút mở rộng/thu gọn -->
+                <a class="nav-link text-white rounded toggle-submenu" href="#" id="recognition-toggle">
+                    <i class="fas fa-user-check me-2"></i> Nhận diện khuôn mặt
+                    <i class="fas fa-chevron-down float-end toggle-icon"></i>
+                </a>
+                <!-- Danh sách con (submenu) -->
+                <ul class="submenu list-unstyled mt-1" id="recognition-submenu">
+                    <li>
+                        <a class="nav-link text-white rounded submenu-item" id="recognition-svm-tab" data-bs-toggle="tab" data-bs-target="#recognition-svm-section" role="tab" aria-controls="recognition-svm-section" aria-selected="false">
+                            <i class="fas fa-brain me-2"></i> SVM
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link text-white rounded submenu-item" id="recognition-siamese-tab" data-bs-toggle="tab" data-bs-target="#recognition-siamese-section" role="tab" aria-controls="recognition-siamese-section" aria-selected="false">
+                            <i class="fas fa-network-wired me-2"></i> Siamese Network
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white rounded" id="attendance-list-tab" data-bs-toggle="tab" data-bs-target="#attendance-list-section" role="tab" aria-controls="attendance-list-section" aria-selected="false">
+                    <i class="fas fa-list me-2"></i> Thông tin điểm danh
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white rounded" id="class-list-tab" data-bs-toggle="tab" data-bs-target="#class-list-section" role="tab" aria-controls="class-list-section" aria-selected="false">
+                    <i class="fas fa-users me-2"></i> Danh sách lớp
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content flex-grow-1 p-4 bg-light">
+        <div class="container">
+            <h1 class="mb-4 text-primary fw-bold">HỆ THỐNG NHẬN DIỆN KHUÔN MẶT</h1>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="myTabContent">
+                <!-- Registration Tab -->
+                <div class="tab-pane fade show active p-4 bg-white rounded shadow-sm" id="register-section" role="tabpanel" aria-labelledby="register-tab">
+                    {% include "register.html" %}
+                </div>
+
+                <!-- Recognition SVM Tab -->
+                <div class="tab-pane fade p-4 bg-white rounded shadow-sm" id="recognition-svm-section" role="tabpanel" aria-labelledby="recognition-svm-tab">
+                    <div id="svm-recognition">
+                        {% include "recognition.html" %}
+                    </div>
+                </div>
+
+                <!-- Recognition Siamese Tab -->
+                <div class="tab-pane fade p-4 bg-white rounded shadow-sm" id="recognition-siamese-section" role="tabpanel" aria-labelledby="recognition-siamese-tab">
+                    <div id="siamese-recognition">
+                        {% include "recognition.html" %}
+                    </div>
+                </div>
+
+                <!-- Attendance List Tab -->
+                <div class="tab-pane fade p-4 bg-white rounded shadow-sm" id="attendance-list-section" role="tabpanel" aria-labelledby="attendance-list-tab">
+                    {% include "attendance_list.html" %}
+                </div>
+                <!-- Trong phần tab content, thêm sau Attendance List Tab -->
+                <div class="tab-pane fade p-4 bg-white rounded shadow-sm" id="class-list-section" role="tabpanel" aria-labelledby="class-list-tab">
+                    {% include "class_list.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</body>
+</html>

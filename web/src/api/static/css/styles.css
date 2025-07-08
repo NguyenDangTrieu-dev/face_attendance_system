@@ -1,0 +1,64 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background-color: #f8f9fa;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 250px;
+    background-color: #343a40;
+    padding-top: 60px;
+    color: white;
+}
+
+.sidebar h5 {
+    padding-left: 20px;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    padding: 12px 20px;
+    display: block;
+    color: white;
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    background-color: #495057;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+    min-height: 100vh;
+}
+
+.card-header {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.list-group-item {
+    border-left: 4px solid #0d6efd;
+}
+
+#attendance-video {
+    width: 720px;
+    height: auto;
+    border-radius: 8px;
+}
+
+#attendance-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 720px;
+    height: auto;
+    pointer-events: none;
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập hệ thống</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #4facfe;
+      outline: none;
+    }
+
+    button {
+      padding: 14px;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      border: none;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 10px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(0, 242, 254, 0.4);
+    }
+
+    .error-message {
+      color: red;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>🔐 Đăng nhập hệ thống</h2>
+    {% if error %}
+      <p class="error-message">{{ error }}</p>
+    {% endif %}
+    <form method="POST">
+      <input type="text" name="id" placeholder="Mã người dùng" required />
+      <input type="password" name="password" placeholder="Mật khẩu" required />
+      <button type="submit">Đăng nhập</button>
+    </form>
+  </div>
+</body>
+</html>

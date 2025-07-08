@@ -1,0 +1,20 @@
+tensorflow= 2.14.0
+keras
+cv2
+scikit-learn
+opencv-python
+h5py
+matplotlib
+Pillow
+flask
+mtcnn
+numpy
+facenet-pytorch
+scipy
+python-dotenv
+qrcode
+openpyxl
+PyJWT
+psycopg2-binary
+imageio
+six

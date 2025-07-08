@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AttendanceActivity">
+
+    <!-- Camera Preview -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="373dp"
+        android:layout_height="410dp"
+        android:layout_margin="16dp"
+        app:layout_constraintBottom_toTopOf="@id/resultText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- TextView to display the recognition result -->
+    <TextView
+        android:id="@+id/resultText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="Kết quả: Chưa có dữ liệu"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/courseInfoText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- TextView to display the course info -->
+    <TextView
+        android:id="@+id/courseInfoText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="Môn học: Chưa có dữ liệu"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/serverIpText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- TextView to display the server IP -->
+    <TextView
+        android:id="@+id/serverIpText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="Địa chỉ server: Chưa có dữ liệu"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/dateTimeText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- TextView to display the date and time -->
+    <TextView
+        android:id="@+id/dateTimeText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="Thời gian: Chưa có dữ liệu"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/captureButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Button to capture a photo -->
+    <Button
+        android:id="@+id/captureButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Điểm danh"
+        app:layout_constraintBottom_toTopOf="@id/scanQrButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Button to go back to QR scanning -->
+    <Button
+        android:id="@+id/scanQrButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Quét lại mã QR"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
