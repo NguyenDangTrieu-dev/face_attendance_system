@@ -19,7 +19,7 @@ os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 FACENET_MODEL_PATH = 'Models/20180402-114759.pb'
 SIAMESE_MODEL_PATH = 'Models/finetuned_siamese_model.keras'
 INPUT_IMAGE_SIZE = 160
-THRESHOLD = 0.87
+THRESHOLD = 0.94
 
 # Cache embeddings per course to avoid DB lag each request
 EMBEDDING_CACHE_TTL_SEC = float(os.getenv("EMBEDDING_CACHE_TTL_SEC", "300"))  # 5 minutes
@@ -168,37 +168,18 @@ def get_user_info(user_id):
     conn.close()
     return row[0] if row else None
 
-# --- Save attendance ---
-def save_attendance(student_id, course_id, base64_image=None):
-    try:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "DELETE FROM attendance WHERE student_id = %s AND course_id = %s",
-            (student_id, course_id)
-        )
-
-        cursor.execute(
-            """
-            INSERT INTO attendance (student_id, course_id, image_base64, time, recognized)
-            VALUES (%s, %s, %s, %s, TRUE)
-            """,
-            (student_id, course_id, base64_image, timestamp)
-        )
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-        logger.info(f"✅ Đã lưu điểm danh cho {student_id} trong khóa học {course_id}")
-
-    except Exception as e:
-        logger.error(f"❌ Lỗi lưu điểm danh: {str(e)}")
-        if 'conn' in locals():
-            conn.rollback()
-            cursor.close()
-            conn.close()
+def load_user_names(course_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT u.id, u.full_name
+        FROM users u
+        JOIN course_students cs ON u.id = cs.student_id
+        WHERE cs.course_id = %s
+    """, (course_id,))
+    rows = cur.fetchall()
+    conn.close()
+    return {r[0]: r[1] for r in rows}
 
 def is_user_in_course(user_id, course_id):
     try:
@@ -303,7 +284,7 @@ def recognize_face(frame, course_id, resize_for_speed: bool = False, target_widt
                 emb1_batch = np.repeat(emb[np.newaxis, :], len(top_users), axis=0)
                 emb2_batch = np.stack([db_embeddings[uid] for uid in top_users]).astype(np.float32)
                 try:
-                    siamese_scores = siamese_model.predict([emb1_batch, emb2_batch], verbose=0).reshape(-1)
+                    siamese_scores = siamese_model.predict({"input_layer_1": emb1_batch,"input_layer_2": emb2_batch}, verbose=0)
                 except Exception as e:
                     logger.error(f"Siamese batch predict error: {str(e)}")
                     siamese_scores = np.zeros((len(top_users),), dtype=np.float32)
@@ -314,21 +295,15 @@ def recognize_face(frame, course_id, resize_for_speed: bool = False, target_widt
                         best_score = combined
                         best_user_id = uid
                         best_name = get_user_info(uid) or "Unknown"
-
             x1, y1, x2, y2 = map(int, bboxes[i])
-            result = {"name": best_name, "bbox": [x1, y1, x2, y2]}
+            result = {
+                "name": best_name,
+                "bbox": [x1, y1, x2, y2],
+                "student_id": best_user_id,
+                "similarity": round(float(best_score), 4) if best_name != "Unknown" else 0.0
+            }
 
-            if best_name != "Unknown" and best_user_id:
-                result["similarity"] = round(float(best_score), 4)
-
-                face_img = frame[y1:y2, x1:x2]
-                if face_img.size > 0:
-                    base64_image = image_to_base64(face_img)
-                    if is_user_in_course(best_user_id, course_id):
-                        save_attendance(best_user_id, course_id, base64_image)
-                results.append(result)
-            else:
-                results.append(result)
+            results.append(result)
 
         return results
 

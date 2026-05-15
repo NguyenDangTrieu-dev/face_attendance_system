@@ -1,2 +1,2516 @@
-<h2>Xin chào {{ user.full_name }} (Admin)</h2>
-<a href="/logout">Đăng xuất</a>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard Admin - Hệ thống Điểm danh</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      :root {
+        --primary: #0d6efd;
+        --primary-dark: #0b5ed7;
+        --sidebar-bg: #343a40;
+        --sidebar-width: 260px;
+        --danger: #dc3545;
+        --success: #198754;
+        --warning: #ffc107;
+        --info: #0dcaf0;
+        --body-bg: #f0f2f5;
+        --card-bg: #ffffff;
+        --border-radius: 12px;
+        --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: var(--body-bg);
+        font-family: 'Be Vietnam Pro', sans-serif;
+        font-size: 14px;
+        color: #212529;
+      }
+
+      /* ========== SIDEBAR ========== */
+      .sidebar {
+        position: fixed;
+        top: 0; bottom: 0; left: 0;
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, #1a1f2e 0%, #343a40 100%);
+        padding-top: 0;
+        color: #fff;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 3px 0 15px rgba(0,0,0,0.2);
+      }
+
+      .sidebar-brand {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(13, 110, 253, 0.15);
+      }
+
+      .sidebar-brand .brand-icon {
+        width: 36px; height: 36px;
+        background: var(--primary);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .sidebar-brand h6 {
+        margin: 0;
+        font-size: 11px;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
+      }
+
+      .sidebar-brand h5 {
+        margin: 4px 0 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .sidebar-section {
+        padding: 14px 12px 4px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.35);
+        font-weight: 600;
+      }
+
+      .sidebar a {
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255,255,255,0.75);
+        text-decoration: none;
+        border-radius: 8px;
+        margin: 2px 8px;
+        font-size: 13.5px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .sidebar a:hover, .sidebar a.active {
+        background: rgba(13, 110, 253, 0.25);
+        color: #fff;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 12px 8px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .sidebar-footer a {
+        color: rgba(220, 53, 69, 0.85) !important;
+      }
+      .sidebar-footer a:hover {
+        background: rgba(220,53,69,0.15) !important;
+        color: #dc3545 !important;
+      }
+
+      /* ========== MAIN ========== */
+      .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 0;
+        min-height: 100vh;
+      }
+
+      .top-header {
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0 24px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 99;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      }
+
+      .top-header h5 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #212529;
+      }
+
+      .admin-badge {
+        background: linear-gradient(135deg, #ff6b35, #f7c59f);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .content-area {
+        padding: 24px;
+      }
+
+      /* ========== STAT CARDS ========== */
+      .stat-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        box-shadow: var(--shadow);
+        border: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+      .stat-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+
+      .stat-card .stat-value {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .stat-card .stat-label {
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 500;
+      }
+
+      /* ========== CARDS ========== */
+      .section-card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .section-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+      }
+
+      .section-card-header h6 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 14px;
+        color: #212529;
+      }
+
+      .section-card-body { padding: 20px; }
+
+      /* ========== TABS ========== */
+      .nav-tabs { border-bottom: 2px solid #e9ecef; gap: 4px; }
+      .nav-tabs .nav-link {
+        border: none;
+        border-radius: 8px 8px 0 0;
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 13.5px;
+        padding: 10px 18px;
+        transition: all 0.2s;
+      }
+      .nav-tabs .nav-link:hover { color: var(--primary); background: #f0f6ff; }
+      .nav-tabs .nav-link.active {
+        color: var(--primary);
+        background: #fff;
+        border-bottom: 2px solid var(--primary);
+        margin-bottom: -2px;
+        font-weight: 600;
+      }
+
+      /* ========== TABLE ========== */
+      .table { font-size: 13.5px; }
+      .table thead th {
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 12.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        padding: 12px 16px;
+        white-space: nowrap;
+      }
+      .table td { padding: 12px 16px; vertical-align: middle; }
+      .table tbody tr { transition: background 0.15s; }
+      .table tbody tr:hover { background: #f8f9ff; }
+
+      /* ========== BADGES ========== */
+      .role-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .badge-admin { background: #fff3cd; color: #856404; }
+      .badge-lecturer { background: #cfe2ff; color: #084298; }
+      .badge-student { background: #d1e7dd; color: #0a3622; }
+
+      /* ========== FORMS ========== */
+      .form-control, .form-select {
+        border-radius: 8px;
+        border: 1.5px solid #dee2e6;
+        font-size: 13.5px;
+        padding: 9px 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(13,110,253,0.12);
+      }
+      .form-label { font-weight: 600; font-size: 13px; color: #495057; margin-bottom: 6px; }
+
+      /* ========== BUTTONS ========== */
+      .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 13px;
+        padding: 8px 16px;
+        transition: all 0.2s;
+      }
+      .btn-sm { padding: 5px 12px; font-size: 12px; }
+      .btn-primary { background: var(--primary); border-color: var(--primary); }
+      .btn-primary:hover { background: var(--primary-dark); }
+
+      /* ========== MODAL ========== */
+      .modal-content { border-radius: var(--border-radius); border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+      .modal-header { border-radius: var(--border-radius) var(--border-radius) 0 0; padding: 16px 20px; }
+      .modal-footer { border-top: 1px solid #e9ecef; padding: 12px 20px; }
+
+      /* ========== SEARCH BAR ========== */
+      .search-bar {
+        position: relative;
+      }
+      .search-bar input {
+        padding-left: 36px;
+      }
+      .search-bar .search-icon {
+        position: absolute;
+        left: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: 14px;
+      }
+
+      /* ========== EMPTY STATE ========== */
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #adb5bd;
+      }
+      .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+      .empty-state p { font-size: 14px; margin: 0; }
+
+      /* ========== ACTION ROW ========== */
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 16px;
+        justify-content: space-between;
+      }
+
+      /* Toast container */
+      #toastContainer {
+        z-index: 9999;
+      }
+
+      /* Course card */
+      .course-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .course-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+      .course-card .course-name { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+      .course-card .course-meta { font-size: 12.5px; color: #6c757d; }
+      .course-card .course-meta span { margin-right: 10px; }
+
+      /* Schedule badge */
+      .schedule-tag {
+        display: inline-block;
+        background: #e7f1ff;
+        color: #0d6efd;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .avatar-circle {
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ======================= MODALS ======================= -->
+     <!-- Modal: Ca thi -->
+    <div class="modal fade" id="examModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="examModalLabel">📝 Thêm ca thi</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="examForm">
+              <input type="hidden" id="examId" />
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <label class="form-label">Tên ca thi <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="examName" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Học phần <span class="text-danger">*</span></label>
+                  <select class="form-select" id="examCourseId" required></select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Giảng viên coi thi <span class="text-danger">*</span></label>
+                  <select class="form-select" id="examLecturerId" required></select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Ngày thi <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" id="examDate" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giờ bắt đầu <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" id="examStartTime" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giờ kết thúc <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" id="examEndTime" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Phòng thi</label>
+                  <input type="text" class="form-control" id="examRoom" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Trạng thái</label>
+                  <select class="form-select" id="examStatus">
+                    <option value="upcoming">Sắp diễn ra</option>
+                    <option value="ongoing">Đang diễn ra</option>
+                    <option value="finished">Đã kết thúc</option>
+                  </select>
+                </div>
+                <div class="col-md-12">
+                  <label class="form-label">Ghi chú</label>
+                  <textarea class="form-control" id="examNote" rows="2"></textarea>
+                </div>
+              </div>
+              <div class="mt-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary">💾 Lưu ca thi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal: Thêm/Sửa Học phần -->
+    <div class="modal fade" id="courseModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="courseModalLabel">📘 Thêm học phần</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="courseForm">
+              <input type="hidden" id="courseId" />
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Tên lớp học phần <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="courseName" placeholder="VD: Trí tuệ nhân tạo - Lớp 12DHTH01" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Giảng viên giảng dạy <span class="text-danger">*</span></label>
+                  <select class="form-select" id="courseLecturer" required>
+                    <option value="" disabled selected>Chọn giảng viên...</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Học kỳ <span class="text-danger">*</span></label>
+                  <select class="form-select" id="courseSemester" required>
+                    <option value="" disabled selected>Chọn học kỳ</option>
+                    <option value="HK1">HK1</option>
+                    <option value="HK2">HK2</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Năm học <span class="text-danger">*</span></label>
+                  <select class="form-select" id="courseYear" required>
+                    <option value="" disabled selected>Chọn năm</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Phòng học</label>
+                  <input type="text" class="form-control" id="courseRoom" placeholder="VD: A201" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Tiết học</label>
+                  <input type="text" class="form-control" id="coursePeriod" placeholder="VD: Tiết 1-3, Thứ 2" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Số tín chỉ</label>
+                  <input type="number" class="form-control" id="courseCredits" placeholder="VD: 3" min="1" max="10" />
+                </div>
+              </div>
+              <div class="mt-4 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-primary">💾 Lưu học phần</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Thêm/Sửa User -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title" id="userModalLabel">👤 Thêm người dùng</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="userForm">
+              <input type="hidden" id="userId" />
+              <div class="mb-3">
+                <label class="form-label">Mã số <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="userIdInput" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="userFullName" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Vai trò <span class="text-danger">*</span></label>
+                <select class="form-select" id="userRole" required>
+                  <option value="" disabled selected>Chọn vai trò</option>
+                  <option value="1">Admin</option>
+                  <option value="2">Giảng viên</option>
+                  <option value="3">Sinh viên</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" class="form-control" id="userPassword" placeholder="Để trống: dùng 123456" />
+                <small class="text-muted">Nếu để trống, mật khẩu mặc định là <strong>123456</strong></small>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" class="btn btn-success">💾 Lưu</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Import Sinh viên từ Excel -->
+    <div class="modal fade" id="importStudentsModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-info text-white">
+            <h5 class="modal-title">📥 Import Sinh viên từ Excel</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-light border mb-3">
+              <strong>📋 Yêu cầu file Excel:</strong><br>
+              Chứa các cột: <code>student_id</code>, <code>full_name</code>
+              <br><small class="text-muted">Mật khẩu mặc định: <strong>123456</strong></small>
+            </div>
+            <form id="importStudentsForm">
+              <div class="mb-3">
+                <label class="form-label">Học phần áp dụng <span class="text-danger">*</span></label>
+                <select class="form-select" id="importCourseId" required>
+                  <option value="" disabled selected>Chọn học phần...</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Chọn file Excel <span class="text-danger">*</span></label>
+                <input type="file" class="form-control" id="studentFile" accept=".xlsx,.xls" required />
+              </div>
+              <button type="submit" class="btn btn-info text-white w-100">📤 Tải lên</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Đăng ký khuôn mặt sinh viên (ZIP) -->
+    <div class="modal fade" id="faceZipModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-warning">
+            <h5 class="modal-title">📦 Import khuôn mặt qua ZIP</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-light border mb-3">
+              <strong>📋 Cấu trúc ZIP:</strong><br>
+              <code>MSSV-HoTen/1.jpg, 2.jpg, ...</code>
+            </div>
+            <form id="zipForm">
+              <input type="file" class="form-control mb-3" id="zipFile" name="zip" accept=".zip" required />
+              <button type="submit" class="btn btn-warning w-100">📥 Import ZIP</button>
+            </form>
+            <div id="zip-result" class="mt-3 small"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Xem sinh viên trong học phần -->
+    <div class="modal fade" id="studentsInCourseModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="studentsInCourseTitle">👨‍🎓 Sinh viên trong học phần</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="studentsInCourseList" class="list-group"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================= SIDEBAR ======================= -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">🛡️</div>
+        <h6>Hệ thống điểm danh</h6>
+        <h5>{{ user.full_name }}</h5>
+      </div>
+
+      <div class="sidebar-section">Tổng quan</div>
+      <a href="#" onclick="showTab('dashboard')" id="nav-dashboard" class="active">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+
+      <div class="sidebar-section">Quản lý</div>
+      <a href="#" onclick="showTab('courses')" id="nav-courses">
+        <span class="nav-icon">📚</span> Học phần
+      </a>
+      <a href="#" onclick="showTab('lecturers')" id="nav-lecturers">
+        <span class="nav-icon">👨‍🏫</span> Giảng viên
+      </a>
+      <a href="#" onclick="showTab('students')" id="nav-students">
+        <span class="nav-icon">👨‍🎓</span> Sinh viên
+      </a>
+      <a href="#" onclick="showTab('users')" id="nav-users">
+        <span class="nav-icon">👥</span> Tài khoản
+      </a>
+      <a href="#" onclick="showTab('exams')" id="nav-exams">
+        <span class="nav-icon">📝</span> Ca thi
+      </a>
+
+      <div class="sidebar-section">Báo cáo</div>
+      <a href="#" onclick="showTab('attendance')" id="nav-attendance">
+        <span class="nav-icon">🕑</span> Lịch sử điểm danh
+      </a>
+
+      <div class="sidebar-section">Hệ thống</div>
+      <a href="#" onclick="showTab('backup')" id="nav-backup">
+        <span class="nav-icon">💾</span> Backup / Restore
+      </a>
+
+      <div class="sidebar-footer">
+        <a href="/logout">
+          <span class="nav-icon">🚪</span> Đăng xuất
+        </a>
+      </div>
+    </div>
+
+    <!-- ======================= MAIN ======================= -->
+    <div class="main-content">
+
+      <!-- Top Header -->
+      <div class="top-header">
+        <h5 id="page-title">📊 Dashboard tổng quan</h5>
+        <div class="d-flex align-items-center gap-3">
+          <span class="admin-badge">🛡️ ADMIN</span>
+          <span style="font-size:13px; color:#6c757d;">{{ user.full_name }}</span>
+        </div>
+      </div>
+
+      <div class="content-area">
+
+        <!-- ========== TAB: DASHBOARD ========== -->
+        <div id="tab-dashboard">
+          <!-- Stat Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:#e7f1ff;">📚</div>
+                <div>
+                  <div class="stat-value text-primary" id="stat-courses">—</div>
+                  <div class="stat-label">Học phần</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:#d1e7dd;">👨‍🏫</div>
+                <div>
+                  <div class="stat-value text-success" id="stat-lecturers">—</div>
+                  <div class="stat-label">Giảng viên</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:#fff3cd;">👨‍🎓</div>
+                <div>
+                  <div class="stat-value text-warning" id="stat-students">—</div>
+                  <div class="stat-label">Sinh viên</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:#f8d7da;">✅</div>
+                <div>
+                  <div class="stat-value text-danger" id="stat-attendance">—</div>
+                  <div class="stat-label">Lượt điểm danh</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overview charts -->
+          <div class="row g-3">
+            <div class="col-md-7">
+              <div class="section-card">
+                <div class="section-card-header">
+                  <h6>📚 Học phần gần đây</h6>
+                  <button class="btn btn-primary btn-sm" onclick="showTab('courses')">Xem tất cả</button>
+                </div>
+                <div class="section-card-body p-0">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Tên học phần</th>
+                        <th>Giảng viên</th>
+                        <th>Học kỳ</th>
+                        <th>Phòng</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dash-courses-tbody">
+                      <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="section-card">
+                <div class="section-card-header">
+                  <h6>📈 Điểm danh theo ngày</h6>
+                </div>
+                <div class="section-card-body">
+                  <canvas id="dashboardChart" height="200"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: COURSES ========== -->
+        <div id="tab-courses" class="d-none">
+          <div class="action-row">
+            <div class="d-flex gap-2 align-items-center">
+              <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-control" id="courseSearch" placeholder="Tìm kiếm học phần..." style="width:260px" oninput="filterCourses()" />
+              </div>
+              <select class="form-select" id="courseLecturerFilter" style="width:200px" onchange="filterCourses()">
+                <option value="">Tất cả giảng viên</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="openCourseModal()">
+              ➕ Thêm học phần
+            </button>
+          </div>
+          <div class="row g-3" id="course-cards"></div>
+        </div>
+
+        <!-- ========== TAB: LECTURERS ========== -->
+        <div id="tab-lecturers" class="d-none">
+          <div class="action-row">
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="form-control" id="lecturerSearch" placeholder="Tìm kiếm giảng viên..." style="width:260px" oninput="filterLecturers()" />
+            </div>
+            <button class="btn btn-success" onclick="openUserModal(null, 2)">➕ Thêm giảng viên</button>
+          </div>
+          <div class="section-card">
+            <div class="section-card-body p-0">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Giảng viên</th>
+                    <th>Mã GV</th>
+                    <th>Số học phần</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="lecturers-tbody">
+                  <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: STUDENTS ========== -->
+        <div id="tab-students" class="d-none">
+          <div class="action-row">
+            <div class="d-flex gap-2 align-items-center">
+              <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-control" id="studentSearch" placeholder="Tìm kiếm sinh viên..." style="width:260px" oninput="filterStudents()" />
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importStudentsModal">📥 Import Excel</button>
+              <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#faceZipModal">📦 Import ZIP khuôn mặt</button>
+              <button class="btn btn-success" onclick="openUserModal(null, 3)">➕ Thêm sinh viên</button>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-card-body p-0">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Sinh viên</th>
+                    <th>MSSV</th>
+                    <th>Khuôn mặt</th>
+                    <th>Camera - Đăng ký</th>
+                    <th style="white-space:nowrap">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="students-tbody">
+                  <tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: USERS ========== -->
+        <div id="tab-users" class="d-none">
+          <div class="action-row">
+            <div class="d-flex gap-2 align-items-center">
+              <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-control" id="userSearch" placeholder="Tìm kiếm tài khoản..." style="width:260px" oninput="filterUsers()" />
+              </div>
+              <select class="form-select" id="userRoleFilter" style="width:180px" onchange="filterUsers()">
+                <option value="">Tất cả vai trò</option>
+                <option value="1">Admin</option>
+                <option value="2">Giảng viên</option>
+                <option value="3">Sinh viên</option>
+              </select>
+            </div>
+            <button class="btn btn-success" onclick="openUserModal()">➕ Thêm tài khoản</button>
+          </div>
+          <div class="section-card">
+            <div class="section-card-body p-0">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Người dùng</th>
+                    <th>Mã số</th>
+                    <th>Vai trò</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody">
+                  <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: ATTENDANCE ========== -->
+        <div id="tab-attendance" class="d-none">
+          <div class="action-row">
+            <div class="d-flex gap-2 align-items-center">
+              <select class="form-select" id="attendanceCourseFilter" style="width:260px" onchange="loadAttendanceAdmin()">
+                <option value="">-- Chọn học phần --</option>
+              </select>
+              <input type="date" class="form-control" id="attendanceDateFilter" style="width:180px" onchange="loadAttendanceAdmin()" />
+            </div>
+            <button class="btn btn-outline-success" onclick="exportAttendanceAdmin()">📤 Xuất Excel</button>
+          </div>
+
+          <div class="section-card">
+            <div class="section-card-body p-0">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Ảnh</th>
+                    <th>Sinh viên</th>
+                    <th>MSSV</th>
+                    <th>Học phần</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-tbody">
+                  <tr><td colspan="6" class="text-center text-muted py-3">Chọn học phần để xem dữ liệu</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== TAB: EXAMS ========== -->
+        <div id="tab-exams" class="d-none">
+          <div class="action-row">
+            <div>
+              <h6 class="mb-1 fw-bold">📝 Quản lý ca thi</h6>
+              <div class="text-muted small">
+                Tạo lịch thi, phân công giảng viên coi thi và theo dõi điểm danh ca thi.
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="openExamModal()">➕ Thêm ca thi</button>
+          </div>
+
+          <div class="row g-3" id="exam-cards">
+            <div class="col-12 text-muted">Đang tải ca thi...</div>
+          </div>
+
+          <div id="exam-detail" class="mt-3"></div>
+        </div>
+        <!-- ========== TAB: BACKUP / RESTORE ========== -->
+        <div id="tab-backup" class="d-none">
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <div class="section-card">
+                <div class="section-card-header">
+                  <h6>💾 Sao lưu dữ liệu</h6>
+                </div>
+                <div class="section-card-body">
+                  <p class="text-muted mb-3">
+                    Tải xuống bản sao lưu toàn bộ database PostgreSQL hiện tại. File xuất ra có định dạng <code>.dump</code>.
+                  </p>
+                  <button id="backupDownloadBtn" class="btn btn-primary" onclick="backupDatabase()">
+                    ⬇️ Tải file backup
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-6">
+              <div class="section-card">
+                <div class="section-card-header">
+                  <h6>♻️ Khôi phục dữ liệu</h6>
+                </div>
+                <div class="section-card-body">
+                  <div class="alert alert-warning">
+                    <strong>⚠️ Cảnh báo:</strong> Restore sẽ ghi đè dữ liệu hiện tại trong database.
+                    Hãy tải backup mới trước khi khôi phục.
+                  </div>
+                  <form id="restoreBackupForm">
+                    <div class="mb-3">
+                      <label class="form-label">Chọn file backup</label>
+                      <input type="file" class="form-control" id="backupFile" name="file" accept=".dump,.backup,.sql" required />
+                      <small class="text-muted">Khuyến nghị dùng file <code>.dump</code> được tải từ chức năng sao lưu.</small>
+                    </div>
+                    <button id="restoreBackupBtn" type="submit" class="btn btn-danger">
+                      ♻️ Khôi phục database
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="backupStatus" class="mt-2"></div>
+        </div>
+
+      </div><!-- /.content-area -->
+    </div><!-- /.main-content -->
+
+    <!-- ========== MODAL: CAMERA ========== -->
+    <div class="modal fade" id="faceModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              📷 Đăng ký khuôn mặt
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal">
+            </button>
+          </div>
+          <div class="modal-body text-center">
+            <video
+              id="video"
+              autoplay
+              playsinline
+              class="w-100 rounded border"
+              style="
+                max-height:400px;
+                object-fit:cover;
+                background:#000;
+              ">
+            </video>
+            <div
+              id="register-status"
+              class="mt-3">
+            </div>
+            <!-- PROGRESS -->
+            <div
+              class="progress mt-3 d-none"
+              id="registerProgressWrapper"
+              style="height:22px;">
+              <div
+                id="registerProgressBar"
+                class="progress-bar progress-bar-striped progress-bar-animated"
+                role="progressbar"
+                style="width:0%">
+                0%
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal">
+              Đóng
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="registerFaceBtn"
+              onclick="captureAndRegister()">
+              <span id="registerFaceBtnText">
+                📸 Chụp & Đăng ký
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      /* ========================================
+         STATE
+      ======================================== */
+      const adminId = "{{ user.user_id }}";
+      let allCourses = [];
+      let allLecturers = [];
+      let allStudents = [];
+      let allUsers = [];
+      let allAttendance = [];
+      let dashChart = null;
+      let stream = null;
+      let currentStudentId = null;
+      let currentStudentName = null;
+      let userRole = "{{ user.role_id }}"; // 1 admin, 2 lecturer
+      let allExams = [];
+
+      /* ========================================
+         HELPERS
+      ======================================== */
+      function qs(id) { return document.getElementById(id); }
+
+      function showToast(message, type = 'success') {
+        let cont = qs('toastContainer');
+        if (!cont) {
+          cont = document.createElement('div');
+          cont.id = 'toastContainer';
+          cont.className = 'toast-container position-fixed top-0 end-0 p-3';
+          document.body.appendChild(cont);
+        }
+        const t = document.createElement('div');
+        t.className = `toast align-items-center text-white bg-${type} border-0`;
+        t.setAttribute('role', 'alert');
+        t.innerHTML = `<div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>`;
+        cont.appendChild(t);
+        const bsT = new bootstrap.Toast(t);
+        bsT.show();
+        setTimeout(() => { bsT.hide(); t.remove(); }, 3500);
+      }
+
+      function getInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
+      }
+
+      function roleBadge(roleId) {
+        const map = {
+          1: ['badge-admin', 'Admin'],
+          2: ['badge-lecturer', 'Giảng viên'],
+          3: ['badge-student', 'Sinh viên'],
+        };
+        const [cls, lbl] = map[roleId] || ['badge-student', 'Unknown'];
+        return `<span class="role-badge ${cls}">${lbl}</span>`;
+      }
+
+      async function setupWebcam(videoElement) {
+
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+
+        videoElement.srcObject = mediaStream;
+
+        await videoElement.play();
+
+        return mediaStream;
+      }
+
+      /* ========================================
+         TABS
+      ======================================== */
+      const tabTitles = {
+        dashboard: '📊 Dashboard tổng quan',
+        courses: '📚 Quản lý học phần',
+        lecturers: '👨‍🏫 Quản lý giảng viên',
+        students: '👨‍🎓 Quản lý sinh viên',
+        users: '👥 Quản lý tài khoản',
+        exams: '📝 Quản lý ca thi',
+        attendance: '🕑 Lịch sử điểm danh',
+        backup: '💾 Sao lưu & Khôi phục dữ liệu',
+      };
+
+      function showTab(name) {
+        document.querySelectorAll('[id^="tab-"]').forEach(el =>
+          el.classList.add('d-none')
+        );
+
+        document.querySelectorAll('.sidebar a').forEach(a =>
+          a.classList.remove('active')
+        );
+
+        qs('tab-' + name)?.classList.remove('d-none');
+        qs('nav-' + name)?.classList.add('active');
+
+        qs('page-title').textContent = tabTitles[name] || '';
+
+        // ✅ CHỈ load ALL students khi vào tab students
+        if (name === "students") {
+          loadStudents();
+        }
+        if (name === "exams") {
+          loadExamSessions();
+        }
+      }
+
+      /* ========================================
+         DASHBOARD
+      ======================================== */
+      async function loadDashboard() {
+        try {
+          const [coursesRes, usersRes, attendanceRes] = await Promise.all([
+            fetch('/api/admin/courses'),
+            fetch('/api/admin/users'),
+            fetch('/api/admin/attendance/recent'),
+          ]);
+
+          if (!coursesRes.ok) throw new Error('Courses HTTP ' + coursesRes.status);
+          if (!usersRes.ok) throw new Error('Users HTTP ' + usersRes.status);
+          if (!attendanceRes.ok) throw new Error('Attendance HTTP ' + attendanceRes.status);
+
+          const courses = await coursesRes.json();
+          const users = await usersRes.json();
+          const attendance = await attendanceRes.json();
+
+          const lecturers = users.filter(u => u.role_id == 2);
+          const students = users.filter(u => u.role_id == 3);
+
+          qs('stat-courses').textContent = courses.length;
+          qs('stat-lecturers').textContent = lecturers.length;
+          qs('stat-students').textContent = students.length;
+          qs('stat-attendance').textContent = attendance.length;
+
+          // Recent courses table
+          const tbody = qs('dash-courses-tbody');
+          tbody.innerHTML = '';
+          courses.slice(0, 6).forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><strong>${c.name}</strong></td>
+              <td>${c.lecturer_name || '—'}</td>
+              <td><span class="schedule-tag">${c.semester}</span></td>
+              <td>${c.room || '—'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          // Chart: attendance by date (last 7 days)
+          const grouped = {};
+          const today = new Date();
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            grouped[d.toLocaleDateString('vi-VN')] = 0;
+          }
+          attendance.forEach(a => {
+            const d = new Date(a.time).toLocaleDateString('vi-VN');
+            if (grouped[d] !== undefined) grouped[d]++;
+          });
+
+          const ctx = qs('dashboardChart').getContext('2d');
+          if (dashChart) dashChart.destroy();
+          dashChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: Object.keys(grouped),
+              datasets: [{
+                label: 'Lượt điểm danh',
+                data: Object.values(grouped),
+                backgroundColor: 'rgba(13,110,253,0.7)',
+                borderRadius: 6,
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+          });
+
+        } catch (e) {
+          console.error('Dashboard load error:', e);
+        }
+      }
+
+      /* ======================= COURSES ======================= */
+      async function loadCourses() {
+        try {
+          const res = await fetch('/api/admin/courses');
+
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+
+          const data = await res.json();
+          console.log("COURSES:", data);
+
+          allCourses = Array.isArray(data) ? data : data.courses || [];
+
+          renderCourses(allCourses);
+
+          populateLecturerFilter();
+          populateImportCourseSelect();
+          populateCourseLecturerSelect();
+
+        } catch (err) {
+          console.error('loadCourses error:', err);
+          showToast('❌ Không tải được danh sách học phần', 'danger');
+        }
+      }
+
+      function renderCourses(list) {
+        const container = qs('course-cards');
+        container.innerHTML = '';
+        if (!list.length) {
+          container.innerHTML = `<div class="col-12"><div class="empty-state">
+            <div class="empty-icon">📚</div><p>Chưa có học phần nào</p></div></div>`;
+          return;
+        }
+        list.forEach(c => {
+          const col = document.createElement('div');
+          col.className = 'col-md-6 col-lg-4';
+          col.innerHTML = `
+            <div class="course-card">
+              <div class="course-name">${c.name}</div>
+              <div class="course-meta mb-2">
+                <span>👨‍🏫 ${c.lecturer_name || 'Chưa rõ'}</span>
+                <span class="schedule-tag">${c.semester}</span>
+              </div>
+              <div class="course-meta mb-3">
+                ${c.room ? `<span>🏫 ${c.room}</span>` : ''}
+                ${c.period ? `<span>🕐 ${c.period}</span>` : ''}
+                ${c.credits ? `<span>💠 ${c.credits} TC</span>` : ''}
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-primary btn-sm" onclick="viewStudentsInCourse(${c.id}, '${c.name.replace(/'/g,"\\'")}')">
+                  👨‍🎓 Sinh viên
+                </button>
+                <button class="btn btn-outline-warning btn-sm" onclick="openCourseModal(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+                  ✏️ Sửa
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteCourse(${c.id})">
+                  🗑️ Xóa
+                </button>
+              </div>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+      }
+
+      function filterCourses() {
+
+        const q = qs('courseSearch')
+          .value
+          .toLowerCase()
+          .trim();
+
+        const lecturerId =
+          qs('courseLecturerFilter').value;
+
+        let filtered = allCourses;
+
+        // lọc giảng viên
+        if (lecturerId) {
+          filtered = filtered.filter(c =>
+            String(c.lecturer_id) === lecturerId
+          );
+        }
+
+        // lọc tên học phần
+        if (q) {
+          filtered = filtered.filter(c =>
+            (c.name || "")
+              .toLowerCase()
+              .includes(q)
+          );
+        }
+
+        renderCourses(filtered);
+      }
+
+      function populateLecturerFilter() {
+        const sel = qs('courseLecturerFilter');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Tất cả giảng viên</option>';
+        allLecturers.forEach(l => {
+          const opt = document.createElement('option');
+          opt.value = l.id;
+          opt.textContent = l.full_name;
+          sel.appendChild(opt);
+        });
+        sel.value = cur;
+      }
+
+      function populateCourseLecturerSelect() {
+        const sel = qs('courseLecturer');
+        sel.innerHTML = '<option value="" disabled selected>Chọn giảng viên...</option>';
+        allLecturers.forEach(l => {
+          const opt = document.createElement('option');
+          opt.value = l.id;
+          opt.textContent = l.full_name;
+          sel.appendChild(opt);
+        });
+      }
+
+      async function loadCoursesByLecturer(lecturerId = '') {
+        try {
+          let url = '/api/admin/courses';
+
+          // nếu có lecturerId thì lọc
+          if (lecturerId) {
+            url += `?lecturer_id=${lecturerId}`;
+          }
+
+          const res = await fetch(url);
+
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+          }
+
+          const data = await res.json();
+
+          allCourses = data;
+
+          // render UI chính
+          renderCourses(allCourses);
+
+          // update các dropdown liên quan
+          populateLecturerFilter();
+          populateImportCourseSelect();
+          populateCourseLecturerSelect();
+
+        } catch (err) {
+          console.error('loadCoursesByLecturer error:', err);
+          showToast('❌ Lỗi tải học phần theo giảng viên', 'danger');
+        }
+      }
+
+      function openCourseModal(course = null) {
+        populateYears();
+        if (!allLecturers.length) loadLecturers().then(() => populateCourseLecturerSelect());
+
+        const modal = new bootstrap.Modal(qs('courseModal'));
+        qs('courseModalLabel').textContent = course ? '📘 Sửa học phần' : '📘 Thêm học phần';
+        qs('courseId').value = course?.id || '';
+        qs('courseName').value = course?.name || '';
+        qs('courseRoom').value = course?.room || '';
+        qs('coursePeriod').value = course?.period || '';
+        qs('courseCredits').value = course?.credits || '';
+
+        if (course?.semester) {
+          const [sem, year] = course.semester.split('-');
+          qs('courseSemester').value = sem || '';
+          qs('courseYear').value = year || '';
+        } else {
+          qs('courseSemester').value = '';
+          qs('courseYear').value = '';
+        }
+        if (course?.lecturer_id) {
+          qs('courseLecturer').value = course.lecturer_id;
+        }
+        modal.show();
+      }
+
+      qs('courseForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = qs('courseId').value;
+        const payload = {
+          name: qs('courseName').value,
+          semester: `${qs('courseSemester').value}-${qs('courseYear').value}`,
+          lecturer_id: qs('courseLecturer').value,
+          room: qs('courseRoom').value,
+          period: qs('coursePeriod').value,
+          credits: qs('courseCredits').value || null,
+        };
+        try {
+          const res = await fetch(id ? `/api/courses/${id}` : '/api/courses', {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.error) return showToast(`❌ ${data.error}`, 'danger');
+          showToast(`✅ ${id ? 'Cập nhật' : 'Thêm'} học phần thành công`, 'success');
+          bootstrap.Modal.getInstance(qs('courseModal'))?.hide();
+          loadCourses();
+        } catch (err) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      };
+
+      async function deleteCourse(id) {
+        if (!confirm('Bạn có chắc muốn xóa học phần này?')) return;
+        const res = await fetch(`/api/courses/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.error) return showToast(`❌ ${data.error}`, 'danger');
+        showToast('✅ Đã xóa học phần', 'success');
+        loadCourses();
+      }
+
+      async function viewStudentsInCourse(courseId, courseName) {
+        qs('studentsInCourseTitle').textContent = `👨‍🎓 Sinh viên - ${courseName}`;
+        const list = qs('studentsInCourseList');
+        list.innerHTML = '<div class="p-3 text-muted">Đang tải...</div>';
+        new bootstrap.Modal(qs('studentsInCourseModal')).show();
+        try {
+          const data = await fetch(`/api/courses/${courseId}/students`).then(r => r.json());
+          list.innerHTML = '';
+          if (!data.length) {
+            list.innerHTML = '<div class="p-3 text-muted text-center">Chưa có sinh viên</div>';
+            return;
+          }
+          data.forEach(st => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item d-flex align-items-center gap-3';
+            div.innerHTML = `
+              <div class="avatar-circle">${getInitials(st.full_name)}</div>
+              <div><strong>${st.id}</strong> — ${st.full_name}</div>
+            `;
+            list.appendChild(div);
+          });
+        } catch (e) {
+          list.innerHTML = '<div class="p-3 text-danger">Lỗi tải dữ liệu</div>';
+        }
+      }
+
+      /* ========================================
+         LECTURERS
+      ======================================== */
+      async function loadLecturers() {
+        fetch("/api/lecturers")
+
+          .then((res) => {
+
+            console.log("STATUS:", res.status);
+
+            if (!res.ok) {
+              throw new Error("HTTP " + res.status);
+            }
+
+            return res.json();
+          })
+
+          .then((data) => {
+
+            console.log("LECTURERS:", data);
+            allLecturers = data; // <-- THÊM DÒNG NÀY
+            const tbody = document.getElementById("lecturers-tbody");
+            tbody.innerHTML = "";
+
+            if (!Array.isArray(data)) {
+              console.error("DATA KHÔNG PHẢI ARRAY");
+              return;
+            }
+
+            if (data.length === 0) {
+
+              tbody.innerHTML = `
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-3">
+                    Không có giảng viên
+                  </td>
+                </tr>
+              `;
+
+              return;
+            }
+
+            data.forEach((lecturer) => {
+
+              const tr = document.createElement("tr");
+
+              tr.innerHTML = `
+                <td>${lecturer.full_name || ""}</td>
+
+                <td>
+                  <strong>${lecturer.user_id || ""}</strong>
+                </td>
+
+                <td>
+                  ${lecturer.total_courses || 0}
+                </td>
+
+                <td>
+                  <button class="btn btn-sm btn-warning"
+                    onclick='openUserModal(${JSON.stringify(lecturer)})'>
+                    ✏️ Sửa
+                  </button>
+
+                  <button class="btn btn-sm btn-danger ms-1"
+                    onclick="deleteUser('${lecturer.id}')">
+                    🗑️ Xóa
+                  </button>
+                </td>
+              `;
+
+              tbody.appendChild(tr);
+            });
+          })
+
+          .catch((err) => {
+
+            console.error("Lỗi tải giảng viên:", err);
+
+            showToast(
+              "❌ Lỗi tải danh sách giảng viên",
+              "danger"
+            );
+          });
+      }
+
+      function renderLecturers(list) {
+        const tbody = qs('lecturers-tbody');
+        tbody.innerHTML = '';
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Không có giảng viên</td></tr>';
+          return;
+        }
+        list.forEach(l => {
+          const courseCount = allCourses.filter(c => String(c.lecturer_id) === String(l.id)).length;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="background:linear-gradient(135deg,#667eea,#764ba2)">${getInitials(l.full_name)}</div>
+                <strong>${l.full_name}</strong>
+              </div>
+            </td>
+            <td><code>${l.id}</code></td>
+            <td><span class="badge bg-primary rounded-pill">${courseCount} học phần</span></td>
+            <td>
+              <button class="btn btn-outline-warning btn-sm me-1" onclick='openUserModal(${JSON.stringify(l)})'>✏️</button>
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteUser('${l.id}')">🗑️</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function filterLecturers() {
+
+        const q = qs('lecturerSearch')
+          .value
+          .toLowerCase()
+          .trim();
+
+        const filtered = allLecturers.filter(l =>
+          (l.full_name || "")
+            .toLowerCase()
+            .includes(q)
+        );
+
+        renderLecturers(filtered);
+      }
+
+      /* ========================================
+         STUDENTS
+      ======================================== */
+      async function loadStudents() {
+        try {
+          const res = await fetch("/api/students");
+          const data = await res.json();
+
+          allStudents = data;
+          renderStudents(allStudents);
+
+        } catch (e) {
+          showToast("❌ Lỗi tải sinh viên", "danger");
+        }
+      }
+
+      function renderStudents(list) {
+        const tbody = qs("students-tbody");
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(list) || list.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                Không có sinh viên
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        list.forEach(st => {
+          const tr = document.createElement("tr");
+
+          tr.innerHTML = `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle"
+                    style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                  ${getInitials(st.full_name)}
+                </div>
+                <strong>${st.full_name || ""}</strong>
+              </div>
+            </td>
+
+            <td><code class="student-id">${st.id || ""}</code></td>
+
+            <td>
+              <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold small shadow-sm ${
+                st.has_embedding ? "bg-success text-white" : "bg-danger text-white"
+              }">
+                ${st.has_embedding ? "🛡️ Đã xác thực" : "⚠️ Chưa xác thực"}
+              </span>
+            </td>
+
+            <td>
+              <button
+                class="btn btn-sm w-60 ${
+                  st.has_embedding ? "btn-outline-warning" : "btn-outline-primary"
+                }"
+                onclick="handleRegisterFace('${st.id}', '${st.full_name}')"
+              >
+                ${
+                  st.has_embedding
+                    ? "🔄 Cập nhật khuôn mặt"
+                    : "📸 Đăng ký khuôn mặt"
+                }
+              </button>
+            </td>
+
+            <td>
+              <button class="btn btn-outline-warning btn-sm me-1"
+                onclick='openUserModal(${JSON.stringify(st)})'>
+                ✏️
+              </button>
+
+              <button class="btn btn-outline-danger btn-sm"
+                onclick="deleteUser('${st.id}')">
+                🗑️
+              </button>
+            </td>
+          `;
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function filterStudents() {
+        const keyword = qs("studentSearch").value.toLowerCase();
+
+        const filtered = allStudents.filter(s =>
+          s.full_name.toLowerCase().includes(keyword) ||
+          s.id.toLowerCase().includes(keyword)
+        );
+
+        renderStudents(filtered);
+      }
+           
+      async function handleRegisterFace(studentId, fullName) {
+        currentStudentId = studentId;
+        currentStudentName = fullName;
+        const modal = new bootstrap.Modal(qs("faceModal"));
+        modal.show();
+        const video = qs("video");
+        const status = qs("register-status");
+        status.innerHTML = "";
+        try {
+          stream = await setupWebcam(video);
+        } catch (e) {
+          console.error(e);
+          status.innerHTML = `
+            <span class="text-danger">
+              ❌ Không thể truy cập webcam
+            </span>
+          `;
+        }
+      }
+
+      /* ========================================
+         USERS (ALL)
+      ======================================== */
+      async function loadUsers() {
+        try {
+          const data = await fetch('/api/admin/users').then(r => r.json());
+          allUsers = data;
+          renderUsers(allUsers);
+        } catch (e) {
+          showToast('❌ Lỗi tải người dùng', 'danger');
+        }
+      }
+
+      function renderUsers(list) {
+        const tbody = qs('users-tbody');
+        tbody.innerHTML = '';
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Không có dữ liệu</td></tr>';
+          return;
+        }
+        list.forEach(u => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="background:linear-gradient(135deg,#f093fb,#f5576c)">${getInitials(u.full_name)}</div>
+                <strong>${u.full_name}</strong>
+              </div>
+            </td>
+            <td><code class="student-id">${u.id}</code></td>
+            <td>${roleBadge(u.role_id)}</td>
+            <td>
+              <button class="btn btn-outline-warning btn-sm me-1" onclick='openUserModal(${JSON.stringify(u)})'>✏️</button>
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function filterUsers() {
+
+        const q = qs('userSearch')
+          .value
+          .toLowerCase()
+          .trim();
+
+        const rf = qs('userRoleFilter').value;
+
+        const filtered = allUsers.filter(u => {
+
+          const matchName =
+            (u.full_name || "")
+              .toLowerCase()
+              .includes(q);
+
+          const matchRole =
+            !rf || String(u.role_id) === rf;
+
+          return matchName && matchRole;
+        });
+
+        renderUsers(filtered);
+      }
+
+      function openUserModal(user = null, defaultRole = null) {
+        const modal = new bootstrap.Modal(qs('userModal'));
+        qs('userModalLabel').textContent = user ? '✏️ Sửa người dùng' : '👤 Thêm người dùng';
+        qs('userId').value = user?.id || '';
+        qs('userIdInput').value = user?.id || '';
+        qs('userIdInput').disabled = !!user;
+        qs('userFullName').value = user?.full_name || '';
+        qs('userRole').value = user?.role_id || defaultRole || '';
+        qs('userPassword').value = '';
+        modal.show();
+      }
+
+      qs('userForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const existingId = qs('userId').value;
+        const payload = {
+          id: qs('userIdInput').value,
+          full_name: qs('userFullName').value,
+          role_id: parseInt(qs('userRole').value),
+          password: qs('userPassword').value || '123456',
+        };
+        try {
+          const res = await fetch(existingId ? `/api/admin/users/${existingId}` : '/api/admin/users', {
+            method: existingId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.error) return showToast(`❌ ${data.error}`, 'danger');
+          showToast(`✅ ${existingId ? 'Cập nhật' : 'Thêm'} tài khoản thành công`, 'success');
+          bootstrap.Modal.getInstance(qs('userModal'))?.hide();
+          loadUsers();
+          loadStudents();
+          loadLecturers();
+        } catch (err) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      };
+
+      async function deleteUser(userId) {
+        if (!confirm(`Bạn có chắc muốn xóa tài khoản ${userId}?`)) return;
+        try {
+          const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.error) return showToast(`❌ ${data.error}`, 'danger');
+          showToast('✅ Đã xóa tài khoản', 'success');
+          loadUsers(); loadStudents(); loadLecturers();
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      }
+
+      /* ========================================
+         IMPORT STUDENTS
+      ======================================== */
+      function populateImportCourseSelect() {
+        const sel = qs('importCourseId');
+        sel.innerHTML = '<option value="" disabled selected>Chọn học phần...</option>';
+        allCourses.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.semester})`;
+          sel.appendChild(opt);
+        });
+      }
+
+      qs('importStudentsForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const courseId = qs('importCourseId').value;
+        const file = qs('studentFile').files[0];
+        if (!courseId || !file) return showToast('❌ Vui lòng điền đầy đủ', 'danger');
+
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const res = await fetch(`/api/courses/${courseId}/import_students`, { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.error) return showToast(`❌ ${data.error}`, 'danger');
+          showToast('✅ Import sinh viên thành công', 'success');
+          bootstrap.Modal.getInstance(qs('importStudentsModal'))?.hide();
+          loadStudents();
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      };
+
+      /* ========================================
+         ZIP IMPORT
+      ======================================== */
+      qs('zipForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const result = qs('zip-result');
+        const fd = new FormData(e.target);
+        result.innerHTML = "<span class='text-info'>⏳ Đang xử lý...</span>";
+        try {
+          const res = await fetch('/api/students/register/zip', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (res.ok) {
+            let html = "<div class='text-success'><strong>✅ Kết quả import:</strong><ul>";
+            data.forEach(item => { html += `<li>${item.student_id} — ${item.name}: ${item.status}</li>`; });
+            html += '</ul></div>';
+            result.innerHTML = html;
+          } else {
+            result.innerHTML = `<span class='text-danger'>❌ ${data.error || 'Lỗi import'}</span>`;
+          }
+        } catch (err) {
+          result.innerHTML = "<span class='text-danger'>❌ Lỗi kết nối</span>";
+        }
+      };
+
+      /* ========================================
+         ATTENDANCE (ADMIN VIEW)
+      ======================================== */
+      async function loadCoursesForSelect() {
+        if (!allCourses.length) {
+          const data = await fetch('/api/admin/courses').then(r => r.json());
+          allCourses = data;
+        }
+        const sel = qs('attendanceCourseFilter');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">-- Chọn học phần --</option>';
+        allCourses.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.semester})`;
+          sel.appendChild(opt);
+        });
+        if (cur) sel.value = cur;
+      }
+
+      async function loadAttendanceAdmin() {
+        const courseId = qs('attendanceCourseFilter').value;
+        const dateFilter = qs('attendanceDateFilter').value;
+        const tbody = qs('attendance-tbody');
+
+        if (!courseId) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Chọn học phần để xem dữ liệu</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">⏳ Đang tải...</td></tr>';
+
+        try {
+          let url = `/api/courses/${courseId}/attendance`;
+          const res = await fetch(url);
+          let data = await res.json();
+
+          if (dateFilter) {
+            data = data.filter(a => {
+              const d = new Date(a.time);
+              return d.toISOString().startsWith(dateFilter);
+            });
+          }
+
+          allAttendance = data;
+          tbody.innerHTML = '';
+
+          if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Không có dữ liệu</td></tr>';
+            return;
+          }
+
+          data.forEach(a => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>
+                <img src="${a.image_base64 ? `data:image/jpeg;base64,${a.image_base64}` : '/static/img/no-face.png'}"
+                  width="48" height="48" class="rounded" style="object-fit:cover; border:1px solid #dee2e6" />
+              </td>
+              <td><strong>${a.name}</strong></td>
+              <td><code>${a.student_id}</code></td>
+              <td>${allCourses.find(c => String(c.id) === courseId)?.name || courseId}</td>
+              <td>${new Date(a.time).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
+              <td>
+                ${a.recognized
+                  ? '<span class="badge bg-success">✅ Đã nhận diện</span>'
+                  : '<span class="badge bg-danger">❌ Chưa nhận</span>'}
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.error(e);
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Lỗi tải dữ liệu</td></tr>';
+        }
+      }
+
+      function exportAttendanceAdmin() {
+        if (!allAttendance.length) return showToast('❌ Chưa có dữ liệu để xuất', 'danger');
+        const data = [['Sinh viên', 'MSSV', 'Thời gian', 'Trạng thái']];
+        allAttendance.forEach(a => {
+          data.push([
+            a.name,
+            a.student_id,
+            new Date(a.time).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+            a.recognized ? 'Đã nhận diện' : 'Chưa nhận'
+          ]);
+        });
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = data[0].map((_, i) => ({
+          wch: Math.max(...data.map(r => String(r[i] || '').length)) + 2
+        }));
+        XLSX.utils.book_append_sheet(wb, ws, 'DiemDanh');
+        XLSX.writeFile(wb, `DiemDanh_Admin_${Date.now()}.xlsx`);
+        showToast('✅ Xuất file thành công', 'success');
+      }
+
+      /* ========================================
+         UTILS
+      ======================================== */
+      function populateYears() {
+        const sel = qs('courseYear');
+        sel.innerHTML = '<option value="" disabled selected>Chọn năm</option>';
+        const cur = new Date().getFullYear();
+        for (let y = 2020; y <= cur + 1; y++) {
+          const opt = document.createElement('option');
+          opt.value = y; opt.textContent = y;
+          sel.appendChild(opt);
+        }
+      }
+      /* ========================================
+         EXAM
+      ======================================== */
+      function formatExamDate(dateValue) {
+        if (!dateValue) return "—";
+        const d = new Date(dateValue);
+        if (isNaN(d.getTime())) return dateValue;
+        return d.toLocaleDateString("vi-VN");
+      }
+
+      function formatExamTime(timeValue) {
+        if (!timeValue) return "—";
+        return String(timeValue).slice(0, 5);
+      }
+
+      function examStatusBadge(status) {
+        const map = {
+          upcoming: ["bg-primary", "Sắp diễn ra"],
+          ongoing: ["bg-success", "Đang diễn ra"],
+          finished: ["bg-secondary", "Đã kết thúc"],
+        };
+        const [cls, text] = map[status] || ["bg-light text-dark", status || "—"];
+        return `<span class="badge ${cls}">${text}</span>`;
+      }
+
+      async function ensureExamSelectorsReady() {
+        if (!allCourses.length) await loadCourses();
+        if (!allLecturers.length) await loadLecturers();
+
+        const courseSel = qs("examCourseId");
+        const lecturerSel = qs("examLecturerId");
+
+        courseSel.innerHTML = '<option value="" disabled selected>Chọn học phần...</option>';
+        allCourses.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = `${c.name} (${c.semester || "—"})`;
+          courseSel.appendChild(opt);
+        });
+
+        lecturerSel.innerHTML = '<option value="" disabled selected>Chọn giảng viên...</option>';
+        allLecturers.forEach(l => {
+          const opt = document.createElement("option");
+          opt.value = l.id || l.user_id;
+          opt.textContent = l.full_name || l.name || l.id;
+          lecturerSel.appendChild(opt);
+        });
+      }
+
+      async function loadExamSessions() {
+        const container = qs("exam-cards");
+        container.innerHTML = `<div class="col-12 text-muted">⏳ Đang tải ca thi...</div>`;
+
+        try {
+          const res = await fetch("/api/admin/exam-sessions");
+          const data = await res.json();
+          if (!res.ok || data.error) throw new Error(data.detail || data.error);
+          allExams = Array.isArray(data) ? data : [];
+          renderExamSessions(allExams);
+        } catch (e) {
+          container.innerHTML = `<div class="col-12"><div class="alert alert-danger">❌ ${e.message}</div></div>`;
+        }
+      }
+
+      function renderExamSessions(list) {
+        const container = qs("exam-cards");
+        container.innerHTML = "";
+
+        if (!list.length) {
+          container.innerHTML = `<div class="col-12"><div class="empty-state"><div class="empty-icon">📝</div><p>Chưa có ca thi nào</p></div></div>`;
+          return;
+        }
+
+        list.forEach(exam => {
+          const total = Number(exam.total_students || 0);
+          const present = Number(exam.present_count || 0);
+          const percent = total ? Math.round((present / total) * 100) : 0;
+
+          const col = document.createElement("div");
+          col.className = "col-md-6 col-xl-4";
+          col.innerHTML = `
+            <div class="course-card">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <div>
+                  <div class="course-name">${exam.name}</div>
+                  <div class="course-meta">${exam.course_name || "—"}</div>
+                </div>
+                ${examStatusBadge(exam.status)}
+              </div>
+              <div class="course-meta mb-2"><span>👨‍🏫 ${exam.lecturer_name || exam.lecturer_id || "—"}</span></div>
+              <div class="course-meta mb-2"><span>📅 ${formatExamDate(exam.exam_date)}</span><span>⏰ ${formatExamTime(exam.start_time)} - ${formatExamTime(exam.end_time)}</span></div>
+              <div class="course-meta mb-3"><span>🏫 ${exam.room || "Chưa có phòng"}</span></div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between small text-muted mb-1"><span>Đã điểm danh</span><span>${present}/${total} (${percent}%)</span></div>
+                <div class="progress" style="height:8px;"><div class="progress-bar" style="width:${percent}%"></div></div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-primary btn-sm" onclick="viewExamStudents(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">👨‍🎓 Sinh viên</button>
+                <button class="btn btn-outline-success btn-sm" onclick="viewExamAttendance(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">🕑 Điểm danh</button>
+                <button class="btn btn-outline-warning btn-sm" onclick="openExamModalById(${exam.id})">✏️ Sửa</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteExamSession(${exam.id})">🗑️ Xóa</button>
+              </div>
+            </div>
+          `;
+          container.appendChild(col);
+        });
+      }
+
+      function openExamModalById(id) {
+        const exam = allExams.find(x => String(x.id) === String(id));
+        openExamModal(exam);
+      }
+
+      async function openExamModal(exam = null) {
+        await ensureExamSelectorsReady();
+        qs("examModalLabel").textContent = exam ? "📝 Sửa ca thi" : "📝 Thêm ca thi";
+        qs("examId").value = exam?.id || "";
+        qs("examName").value = exam?.name || "";
+        qs("examCourseId").value = exam?.course_id || "";
+        qs("examLecturerId").value = exam?.lecturer_id || "";
+        qs("examDate").value = exam?.exam_date || "";
+        qs("examStartTime").value = formatExamTime(exam?.start_time);
+        qs("examEndTime").value = formatExamTime(exam?.end_time);
+        qs("examRoom").value = exam?.room || "";
+        qs("examStatus").value = exam?.status || "upcoming";
+        qs("examNote").value = exam?.note || "";
+        new bootstrap.Modal(qs("examModal")).show();
+      }
+
+      async function saveExamSession(e) {
+        e.preventDefault();
+        const id = qs("examId").value;
+        const payload = {
+          name: qs("examName").value.trim(),
+          course_id: Number(qs("examCourseId").value),
+          lecturer_id: qs("examLecturerId").value,
+          exam_date: qs("examDate").value,
+          start_time: qs("examStartTime").value,
+          end_time: qs("examEndTime").value,
+          room: qs("examRoom").value.trim(),
+          status: qs("examStatus").value,
+          note: qs("examNote").value.trim(),
+        };
+
+        const res = await fetch(id ? `/api/admin/exam-sessions/${id}` : "/api/admin/exam-sessions", {
+          method: id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) return showToast(`❌ ${data.detail || data.error}`, "danger");
+        showToast(`✅ ${id ? "Cập nhật" : "Tạo"} ca thi thành công`, "success");
+        bootstrap.Modal.getInstance(qs("examModal"))?.hide();
+        loadExamSessions();
+      }
+
+      async function deleteExamSession(id) {
+        if (!confirm("Bạn có chắc muốn xóa ca thi này?")) return;
+        const res = await fetch(`/api/admin/exam-sessions/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok || data.error) return showToast(`❌ ${data.detail || data.error}`, "danger");
+        showToast("✅ Đã xóa ca thi", "success");
+        loadExamSessions();
+      }
+
+      async function viewExamStudents(id, name) {
+        const detail = qs("exam-detail");
+        detail.innerHTML = `<div class="alert alert-info">⏳ Đang tải sinh viên ca thi...</div>`;
+        const res = await fetch(`/api/exam-sessions/${id}/students`);
+        const data = await res.json();
+        if (!res.ok || data.error) return detail.innerHTML = `<div class="alert alert-danger">❌ ${data.detail || data.error}</div>`;
+        const rows = data.map(st => `<tr><td><strong>${st.full_name || ""}</strong></td><td><code>${st.id || ""}</code></td><td>${st.has_embedding ? '<span class="badge bg-success">Đã xác thực</span>' : '<span class="badge bg-danger">Chưa xác thực</span>'}</td><td>${st.recognized ? '<span class="badge bg-success">Đã điểm danh</span>' : '<span class="badge bg-secondary">Chưa điểm danh</span>'}</td></tr>`).join("");
+        detail.innerHTML = `<div class="section-card"><div class="section-card-header"><h6>👨‍🎓 Sinh viên dự thi - ${name}</h6></div><div class="section-card-body p-0"><table class="table table-hover mb-0"><thead><tr><th>Sinh viên</th><th>MSSV</th><th>Khuôn mặt</th><th>Điểm danh ca thi</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="text-center text-muted py-3">Chưa có sinh viên</td></tr>'}</tbody></table></div></div>`;
+      }
+
+      async function viewExamAttendance(id, name) {
+        const detail = qs("exam-detail");
+        detail.innerHTML = `<div class="alert alert-info">⏳ Đang tải lịch sử điểm danh ca thi...</div>`;
+        const res = await fetch(`/api/exam-sessions/${id}/attendance`);
+        const data = await res.json();
+        if (!res.ok || data.error) return detail.innerHTML = `<div class="alert alert-danger">❌ ${data.detail || data.error}</div>`;
+        const rows = data.map(a => `<tr><td><img src="${a.image_base64 ? `data:image/jpeg;base64,${a.image_base64}` : '/static/img/no-face.png'}" width="48" height="48" class="rounded" style="object-fit:cover;border:1px solid #dee2e6" /></td><td><strong>${a.student_name || ""}</strong></td><td><code>${a.student_id || ""}</code></td><td>${a.time ? new Date(a.time).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}</td><td>${a.recognized ? '<span class="badge bg-success">Đã nhận diện</span>' : '<span class="badge bg-danger">Chưa nhận</span>'}</td><td>${a.similarity ?? "—"}</td></tr>`).join("");
+        detail.innerHTML = `<div class="section-card"><div class="section-card-header"><h6>🕑 Lịch sử điểm danh ca thi - ${name}</h6></div><div class="section-card-body p-0"><table class="table table-hover mb-0"><thead><tr><th>Ảnh</th><th>Sinh viên</th><th>MSSV</th><th>Thời gian</th><th>Trạng thái</th><th>Similarity</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có dữ liệu điểm danh</td></tr>'}</tbody></table></div></div>`;
+      }
+      /* ========================================
+         BACKUP / RESTORE
+      ======================================== */
+      function parseFilenameFromDisposition(disposition) {
+        if (!disposition) return null;
+        const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match) return decodeURIComponent(utf8Match[1]);
+
+        const normalMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+        return normalMatch ? normalMatch[1] : null;
+      }
+
+      async function backupDatabase() {
+        const btn = qs("backupDownloadBtn");
+        const status = qs("backupStatus");
+
+        btn.disabled = true;
+        btn.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Đang tạo backup...
+        `;
+        status.innerHTML = "";
+
+        try {
+          const res = await fetch("/api/admin/backup/download");
+
+          if (!res.ok) {
+            let message = `HTTP ${res.status}`;
+            try {
+              const data = await res.json();
+              message = data.detail || data.error || message;
+            } catch {}
+            throw new Error(message);
+          }
+
+          const blob = await res.blob();
+          const filename = parseFilenameFromDisposition(
+            res.headers.get("Content-Disposition")
+          ) || `face_db_backup_${Date.now()}.dump`;
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+
+          showToast("✅ Đã tạo file backup", "success");
+          status.innerHTML = `
+            <div class="alert alert-success">
+              ✅ Backup thành công: <strong>${filename}</strong>
+            </div>
+          `;
+
+        } catch (e) {
+          console.error(e);
+          showToast("❌ Backup thất bại", "danger");
+          status.innerHTML = `
+            <div class="alert alert-danger">
+              ❌ Backup thất bại: ${e.message || "Lỗi không xác định"}
+            </div>
+          `;
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "⬇️ Tải file backup";
+        }
+      }
+
+      async function restoreBackup(e) {
+        e.preventDefault();
+
+        const input = qs("backupFile");
+        const btn = qs("restoreBackupBtn");
+        const status = qs("backupStatus");
+        const file = input.files[0];
+
+        if (!file) {
+          showToast("❌ Vui lòng chọn file backup", "danger");
+          return;
+        }
+
+        if (!confirm("Restore sẽ ghi đè dữ liệu hiện tại. Bạn có chắc muốn tiếp tục?")) {
+          return;
+        }
+
+        const fd = new FormData();
+        fd.append("file", file);
+
+        btn.disabled = true;
+        btn.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Đang restore...
+        `;
+        status.innerHTML = `
+          <div class="alert alert-info">⏳ Đang khôi phục dữ liệu, vui lòng không tắt trang...</div>
+        `;
+
+        try {
+          const res = await fetch("/api/admin/backup/restore", {
+            method: "POST",
+            body: fd
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            throw new Error(data.detail || data.error || "Restore thất bại");
+          }
+
+          showToast("✅ Restore thành công", "success");
+          status.innerHTML = `
+            <div class="alert alert-success">
+              ✅ Khôi phục dữ liệu thành công. Hãy tải lại trang để cập nhật toàn bộ dữ liệu.
+            </div>
+          `;
+
+          await Promise.allSettled([
+            loadLecturers(),
+            loadCourses(),
+            loadDashboard(),
+            loadUsers(),
+            loadStudents()
+          ]);
+
+        } catch (e) {
+          console.error(e);
+          showToast("❌ Restore thất bại", "danger");
+          status.innerHTML = `
+            <div class="alert alert-danger">
+              ❌ Restore thất bại: ${e.message || "Lỗi không xác định"}
+            </div>
+          `;
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = "♻️ Khôi phục database";
+        }
+      }
+
+      function updateRegisterProgress(percent, text = "") {
+
+        const wrapper = qs("registerProgressWrapper");
+        const bar = qs("registerProgressBar");
+
+        wrapper.classList.remove("d-none");
+        bar.style.width = `${percent}%`;
+        bar.textContent = text || `${percent}%`;
+      }
+
+      async function captureAndRegister() {
+
+        const btn = qs("registerFaceBtn");
+        const btnText = qs("registerFaceBtnText");
+        const status = qs("register-status");
+
+        btn.disabled = true;
+
+        btnText.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2"></span>
+          Đang xử lý...
+        `;
+
+        try {
+
+          const video = qs("video");
+
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // =============================
+          // CHỤP NHIỀU FRAME
+          // =============================
+          const frames = [];
+
+          for (let i = 0; i < 10; i++) {
+
+            updateRegisterProgress(
+              10 + i * 5,
+              `Đang chụp ảnh ${i + 1}/10`
+            );
+
+            ctx.drawImage(video, 0, 0);
+
+            const imageBase64 = canvas.toDataURL("image/jpeg");
+
+            frames.push(imageBase64);
+
+            // delay nhỏ
+            await new Promise(r => setTimeout(r, 1000));
+          }
+
+          updateRegisterProgress(
+            70,
+            "Đang xử lý khuôn mặt..."
+          );
+
+          const res = await fetch("/api/students/register_face", {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              student_id: currentStudentId,
+              full_name: currentStudentName,
+              frames: frames
+            })
+          });
+
+          // =============================
+          // KIỂM TRA RESPONSE
+          // =============================
+          const text = await res.text();
+
+          let data;
+
+          try {
+            data = JSON.parse(text);
+          } catch {
+
+            console.error("RAW RESPONSE:", text);
+
+            throw new Error(
+              "Server không trả JSON hợp lệ"
+            );
+          }
+
+          if (!res.ok || data.error) {
+            throw new Error(
+              data.error || "Đăng ký thất bại"
+            );
+          }
+
+          updateRegisterProgress(
+            100,
+            "Hoàn tất"
+          );
+
+          status.innerHTML = `
+            <div class="alert alert-success mt-3 mb-0">
+              ✅ Đăng ký khuôn mặt thành công
+            </div>
+          `;
+
+          showToast(
+            "✅ Đăng ký thành công",
+            "success"
+          );
+
+          loadStudents();
+
+          setTimeout(() => {
+
+            bootstrap.Modal
+              .getInstance(qs("faceModal"))
+              ?.hide();
+
+          }, 1200);
+
+        } catch (e) {
+
+          console.error(e);
+
+          status.innerHTML = `
+            <div class="alert alert-danger mt-3 mb-0">
+              ❌ ${e.message || "Lỗi đăng ký"}
+            </div>
+          `;
+
+          showToast(
+            "❌ Đăng ký thất bại",
+            "danger"
+          );
+
+        } finally {
+
+          btn.disabled = false;
+
+          btnText.innerHTML = `
+            📸 Chụp & Đăng ký
+          `;
+        }
+      }
+      /* ========================================
+         INIT
+      ======================================== */
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+
+          await loadLecturers();
+          await loadCourses();
+          await loadDashboard();
+          await loadUsers();
+          qs("restoreBackupForm")?.addEventListener("submit", restoreBackup);
+          qs("examForm")?.addEventListener("submit", saveExamSession);
+        } catch (e) {
+
+          console.error(e);
+
+          showToast(
+            '❌ Lỗi khởi tạo dashboard',
+            'danger'
+          );
+        }
+      });
+
+      qs("faceModal").addEventListener("hidden.bs.modal", () => {
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+      });
+    </script>
+  </body>
+</html>

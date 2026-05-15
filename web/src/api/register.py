@@ -142,3 +142,22 @@ def register_face(student_id, name, frames):
             cur.close()
             conn.close()
         return {"error": f"Lỗi hệ thống: {str(e)}"}, 500
+def insert_user_if_not_exists(student_id, name):
+    conn = psycopg2.connect(**POSTGRES_CONFIG)
+    cur = conn.cursor()
+
+    cur.execute("SELECT 1 FROM users WHERE id = %s", (student_id,))
+    if cur.fetchone():
+        cur.close()
+        conn.close()
+        return
+
+    # 🔥 insert đúng schema DB
+    cur.execute("""
+        INSERT INTO users (id, full_name, password)
+        VALUES (%s, %s, %s)
+    """, (student_id, name, "123456"))  # password default
+
+    conn.commit()
+    cur.close()
+    conn.close()

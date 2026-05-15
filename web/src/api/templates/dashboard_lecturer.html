@@ -12,85 +12,736 @@
     />
 
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        background-color: #f8f9fa;
-      }
-      .sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: 250px;
-        background-color: #343a40;
-        padding-top: 60px;
-        color: #fff;
-      }
-      .sidebar h5 {
-        padding-left: 20px;
-        margin-bottom: 30px;
-      }
-      .sidebar a {
-        padding: 12px 20px;
-        display: block;
-        color: #fff;
-        text-decoration: none;
-      }
-      .sidebar a:hover {
-        background-color: #495057;
+
+      :root{
+          --sidebar-width: 300px;
+          --primary: #2563eb;
+          --primary-dark: #1d4ed8;
+          --bg: #f8fafc;
+          --text: #0f172a;
+          --muted: #64748b;
+          --border: #e2e8f0;
       }
 
-      .main-content {
-        margin-left: 250px;
-        padding: 20px;
-        width: calc(100% - 250px);
-        min-height: 100vh;
-      }
-      .card-header {
-        background-color: #0d6efd;
-        color: #fff;
-      }
-      .list-group-item {
-        border-left: 4px solid #0d6efd;
+      /* =========================
+        GLOBAL
+      ========================= */
+
+      *{
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
       }
 
-      #attendance-video {
-        width: 720px;
-        height: auto;
-        border-radius: 8px;
-      }
-      #attendance-canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 720px;
-        height: auto;
-        pointer-events: none;
+      body{
+          overflow-x: hidden;
+          background: var(--bg);
+          font-family: "Inter", sans-serif;
+          color: var(--text);
       }
 
-      /* Course modal layout */
-      #courseModal .row {
-        display: flex;
-        gap: 10px;
-      }
-      #courseModal .col {
-        flex: 1;
+      /* =========================
+        SIDEBAR
+      ========================= */
+
+      .sidebar{
+          width: var(--sidebar-width);
+          min-height: 100vh;
+          position: fixed;
+          top: 0;
+          left: 0;
+          z-index: 1000;
+
+          display: flex;
+          flex-direction: column;
+
+          padding: 24px 18px;
+
+          background:
+              linear-gradient(
+                  180deg,
+                  #0f172a 0%,
+                  #111827 100%
+              );
+
+          color: white;
+
+          box-shadow:
+              4px 0 30px rgba(0,0,0,0.15);
       }
 
-      /* Import modal */
-      #importStudentsModal .form-label {
-        font-weight: 600;
+      /* HEADER */
+
+      .sidebar-header{
+          display: flex;
+          align-items: center;
+          gap: 14px;
+
+          padding-bottom: 24px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
       }
-      #importStudentsModal .form-text {
-        font-size: 0.875rem;
-        color: #6c757d;
+
+      .sidebar-avatar{
+          width: 58px;
+          height: 58px;
+
+          border-radius: 50%;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  #3b82f6,
+                  #2563eb
+              );
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 24px;
+          font-weight: 700;
+
+          color: white;
+
+          box-shadow:
+              0 10px 25px rgba(37,99,235,0.4);
       }
-      #importStudentsModal .btn-success {
-        font-weight: 500;
+
+      .sidebar-user-info h5{
+          margin: 0;
+          font-size: 17px;
+          font-weight: 700;
       }
-    </style>
+
+      .sidebar-role{
+          font-size: 13px;
+          color: #93c5fd;
+      }
+
+      /* MENU */
+
+      .sidebar-menu{
+          margin-top: 30px;
+
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+      }
+
+      .sidebar-link{
+          display: flex;
+          align-items: center;
+          gap: 14px;
+
+          padding: 16px;
+
+          text-decoration: none;
+          color: white;
+
+          border-radius: 18px;
+
+          background: rgba(255,255,255,0.03);
+
+          border: 1px solid transparent;
+
+          transition:
+              transform 0.25s ease,
+              background 0.25s ease,
+              border 0.25s ease;
+      }
+
+      .sidebar-link:hover{
+          transform: translateX(5px);
+
+          background: rgba(59,130,246,0.12);
+
+          border-color:
+              rgba(59,130,246,0.25);
+      }
+
+      .sidebar-link.active{
+          background:
+              linear-gradient(
+                  135deg,
+                  var(--primary),
+                  var(--primary-dark)
+              );
+
+          box-shadow:
+              0 10px 30px rgba(37,99,235,0.35);
+      }
+
+      .sidebar-icon{
+          width: 48px;
+          height: 48px;
+
+          border-radius: 14px;
+
+          background:
+              rgba(255,255,255,0.12);
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 20px;
+      }
+
+      .sidebar-link h6{
+          margin: 0;
+          font-size: 15px;
+          font-weight: 700;
+      }
+
+      .sidebar-link small{
+          color: rgba(255,255,255,0.7);
+      }
+
+      /* CARD */
+
+      .sidebar-card{
+          margin-top: auto;
+          margin-bottom: 24px;
+
+          padding: 18px;
+
+          border-radius: 22px;
+
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  #1e40af,
+                  #2563eb
+              );
+
+          box-shadow:
+              0 10px 30px rgba(37,99,235,0.35);
+      }
+
+      .sidebar-card-icon{
+          font-size: 28px;
+      }
+
+      .sidebar-card h6{
+          margin-bottom: 6px;
+          font-weight: 700;
+      }
+
+      .sidebar-card p{
+          margin: 0;
+          font-size: 13px;
+          opacity: 0.92;
+      }
+
+      /* FOOTER */
+
+      .sidebar-footer{
+          padding-top: 18px;
+          border-top:
+              1px solid rgba(255,255,255,0.08);
+      }
+
+      .logout-btn{
+          width: 100%;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          padding: 14px;
+
+          border-radius: 14px;
+
+          background:
+              rgba(239,68,68,0.12);
+
+          color: #fca5a5;
+
+          text-decoration: none;
+          font-weight: 600;
+
+          transition: all 0.25s ease;
+      }
+
+      .logout-btn:hover{
+          background:
+              rgba(239,68,68,0.22);
+
+          color: white;
+      }
+
+      /* =========================
+        MAIN CONTENT
+      ========================= */
+
+      .main-content{
+          margin-left: var(--sidebar-width);
+
+          min-height: 100vh;
+
+          padding: 24px;
+
+          background: var(--bg);
+      }
+
+      /* =========================
+        TABS
+      ========================= */
+
+      .nav-tabs{
+          border: none;
+          gap: 10px;
+      }
+
+      .nav-tabs .nav-link{
+          border: none;
+          border-radius: 12px;
+
+          padding: 12px 18px;
+
+          font-weight: 600;
+
+          color: var(--muted);
+
+          transition: all 0.25s ease;
+      }
+
+      .nav-tabs .nav-link:hover{
+          background: #eef2ff;
+          color: var(--primary);
+      }
+
+      .nav-tabs .nav-link.active{
+          background: var(--primary);
+          color: white;
+          box-shadow:
+              0 8px 20px rgba(37,99,235,0.2);
+      }
+
+      /* =========================
+        CARDS
+      ========================= */
+
+      .card,
+      .modal-content,
+      .list-group-item,
+      .table{
+          border: none !important;
+          border-radius: 18px !important;
+
+          box-shadow:
+              0 6px 24px rgba(15,23,42,0.06);
+      }
+
+      .list-group-item{
+          margin-bottom: 10px;
+          border-left: 4px solid var(--primary) !important;
+      }
+
+      /* =========================
+        BUTTONS
+      ========================= */
+
+      .btn{
+          border-radius: 12px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+      }
+
+      .btn:hover{
+          transform: translateY(-1px);
+      }
+
+      /* =========================
+        MODAL
+      ========================= */
+
+      .modal-content{
+          overflow: hidden;
+      }
+
+      .modal-header{
+          border-bottom: none;
+      }
+
+      .modal-footer{
+          border-top: none;
+      }
+
+      /* =========================
+        VIDEO
+      ========================= */
+
+      #attendance-video{
+          width: 720px;
+          max-width: 100%;
+          border-radius: 12px;
+      }
+
+      #attendance-canvas{
+          position: absolute;
+          top: 0;
+          left: 0;
+
+          width: 720px;
+          max-width: 100%;
+
+          pointer-events: none;
+      }
+
+      /* =========================
+        TABLE
+      ========================= */
+
+      .table{
+          overflow: hidden;
+          background: white;
+      }
+
+      .table thead{
+          background: #f1f5f9;
+      }
+
+      /* =========================
+        RESPONSIVE
+      ========================= */
+
+      @media(max-width: 992px){
+
+          .sidebar{
+              position: relative;
+              width: 100%;
+              min-height: auto;
+
+              border-radius:
+                  0 0 24px 24px;
+          }
+
+          .main-content{
+              margin-left: 0;
+              padding: 18px;
+          }
+
+          .sidebar-card{
+              margin-top: 24px;
+          }
+
+          .nav-tabs{
+              overflow-x: auto;
+              flex-wrap: nowrap;
+          }
+      }
+
+      /* =========================
+        MODERN COURSE CARD
+      ========================= */
+
+      .course-card{
+          position: relative;
+
+          height: 100%;
+
+          background: white;
+
+          border-radius: 24px;
+
+          padding: 22px;
+
+          overflow: hidden;
+
+          border:
+              1px solid rgba(226,232,240,0.8);
+
+          box-shadow:
+              0 10px 30px rgba(15,23,42,0.05);
+
+          transition:
+              transform 0.25s ease,
+              box-shadow 0.25s ease;
+      }
+
+      .course-card:hover{
+          transform: translateY(-6px);
+
+          box-shadow:
+              0 18px 40px rgba(37,99,235,0.12);
+      }
+
+      .course-top-gradient{
+          position: absolute;
+
+          top: 0;
+          left: 0;
+
+          width: 100%;
+          height: 6px;
+
+          background:
+              linear-gradient(
+                  90deg,
+                  #2563eb,
+                  #60a5fa
+              );
+      }
+
+      /* HEADER */
+
+      .course-header{
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          margin-bottom: 22px;
+      }
+
+      .course-icon{
+          width: 58px;
+          height: 58px;
+
+          border-radius: 18px;
+
+          background:
+              linear-gradient(
+                  135deg,
+                  rgba(37,99,235,0.12),
+                  rgba(59,130,246,0.05)
+              );
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 26px;
+      }
+
+      .course-semester-badge{
+          padding: 8px 14px;
+
+          border-radius: 999px;
+
+          background:
+              rgba(37,99,235,0.08);
+
+          color: #2563eb;
+
+          font-size: 13px;
+          font-weight: 700;
+      }
+
+      /* BODY */
+
+      .course-title{
+          font-size: 22px;
+          font-weight: 700;
+
+          margin-bottom: 18px;
+
+          color: #0f172a;
+      }
+
+      .course-meta{
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+      }
+
+      .course-meta-item{
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          font-size: 14px;
+
+          color: #64748b;
+      }
+
+      /* ACTIONS */
+
+      .course-actions{
+          display: flex;
+          gap: 12px;
+
+          margin-top: 26px;
+      }
+
+      .course-btn-primary,
+      .course-btn-secondary{
+          flex: 1;
+
+          border: none;
+
+          border-radius: 14px;
+
+          padding: 12px;
+
+          font-weight: 600;
+
+          transition: all 0.25s ease;
+      }
+
+      .course-btn-primary{
+          background:
+              linear-gradient(
+                  135deg,
+                  #2563eb,
+                  #1d4ed8
+              );
+
+          color: white;
+      }
+
+      .course-btn-primary:hover{
+          transform: translateY(-2px);
+
+          box-shadow:
+              0 10px 24px rgba(37,99,235,0.25);
+      }
+
+      .course-btn-secondary{
+          background: #eff6ff;
+          color: #2563eb;
+      }
+
+      .course-btn-secondary:hover{
+          background: #dbeafe;
+      }
+
+      /* FOOTER */
+
+      .course-footer{
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+
+          margin-top: 22px;
+
+          padding-top: 18px;
+
+          border-top:
+              1px solid rgba(226,232,240,0.8);
+      }
+
+      .course-action-icon{
+          width: 42px;
+          height: 42px;
+
+          border: none;
+
+          border-radius: 12px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 16px;
+
+          transition: all 0.25s ease;
+      }
+
+      .course-action-icon.edit{
+          background: #fef3c7;
+      }
+
+      .course-action-icon.edit:hover{
+          background: #fde68a;
+      }
+
+      .course-action-icon.delete{
+          background: #fee2e2;
+      }
+
+      .course-action-icon.delete:hover{
+          background: #fecaca;
+      }
+
+      /* EMPTY */
+
+      .course-empty{
+          background: white;
+          border-radius: 24px;
+          padding: 70px 30px;
+          text-align: center;
+
+          box-shadow:
+              0 10px 30px rgba(15,23,42,0.05);
+      }
+
+      .course-empty-icon{
+          font-size: 64px;
+          margin-bottom: 18px;
+      }
+
+      .course-empty h4{
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 12px;
+      }
+
+      .course-empty p{
+          color: #64748b;
+          margin: 0;
+      }
+
+      /* LIST ATTENDANCE RECOGNIZE REALTIME */
+      .realtime-wrapper{
+          display: flex;
+          gap: 20px;
+          align-items: flex-start;
+      }
+
+      .camera-section{
+          flex: 1;
+      }
+
+      .attendance-camera{
+          width: 100%;
+          max-width: 720px;
+          background: #000;
+          border-radius: 10px;
+          border: 2px solid #0d6efd;
+      }
+
+      .realtime-sidebar{
+          width: 320px;
+          height: 540px;
+
+          overflow-y: auto;
+
+          background: #111827;
+          color: white;
+
+          border-radius: 12px;
+          padding: 16px;
+      }
+
+      .sidebar-title{
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 16px;
+      }
+
+      .event-success{
+          background: #064e3b;
+          border-left: 4px solid #10b981;
+
+          margin-bottom: 12px;
+          padding: 12px;
+          border-radius: 10px;
+      }
+
+      .event-fail{
+          background: #7f1d1d;
+          border-left: 4px solid #ef4444;
+
+          margin-bottom: 12px;
+          padding: 12px;
+          border-radius: 10px;
+      }
+      </style>
 
     <!-- JS libs (LOAD ONCE) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -100,43 +751,6 @@
 
   <body>
     <!-- ======================= MODALS ======================= -->
-
-    <!-- Face Register Modal -->
-    <div
-      class="modal fade"
-      id="faceModal"
-      tabindex="-1"
-      aria-labelledby="faceModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="faceModalLabel">Đăng ký khuôn mặt</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Đóng"
-            ></button>
-          </div>
-          <div class="modal-body text-center">
-            <video
-              id="video"
-              autoplay
-              playsinline
-              width="100%"
-              style="max-height: 400px; border-radius: 8px"
-            ></video>
-            <canvas id="canvas" style="display: none"></canvas>
-            <p class="mt-3" id="register-status"></p>
-            <button class="btn btn-primary mt-2" id="btn-start-register">
-              Bắt đầu đăng ký
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Attendance realtime modal -->
     <div
@@ -159,70 +773,32 @@
               id="btn-close-attendance-x"
             ></button>
           </div>
-          <div class="modal-body text-center">
-            <div class="position-relative d-inline-block mx-auto">
-              <img
-                id="attendance-stream"
-                src=""
-                alt="Realtime Attendance Stream"
-                style="
-                  width: 100%;
-                  max-width: 720px;
-                  background: #000;
-                  border-radius: 8px;
-                  border: 2px solid #0d6efd;
-                "
-                onload="this.style.background='transparent'"
-                onerror="this.src=''; setTimeout(() => { this.src = '/video_feed?' + Date.now(); }, 1000);"
-              />
+          <div class="modal-body">
+            <div class="realtime-wrapper">
+                <!-- CAMERA -->
+                <div class="camera-section">
+                    <img
+                        id="attendance-stream"
+                        src=""
+                        alt="Realtime Attendance Stream"
+                        class="attendance-camera"
+                        onload="this.style.background='transparent'"
+                        onerror="console.log('Video feed unavailable')"
+                    />
+                    <div class="mt-3 text-center">
+                        <button class="btn btn-danger" id="btn-close-attendance">
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+                <!-- SIDEBAR -->
+                <div class="realtime-sidebar">
+                    <div class="sidebar-title">
+                        Kết quả nhận diện
+                    </div>
+                    <div id="realtime-events"></div>
+                </div>
             </div>
-            <div class="mt-3">
-              <button class="btn btn-danger" id="btn-close-attendance">
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Camera Modal for Student Management -->
-    <div class="modal fade" id="cameraModal" tabindex="-1">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">📸 Đăng ký khuôn mặt</h5>
-            <button class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body text-center">
-            <div class="position-relative d-inline-block">
-              <video
-                id="camera-video"
-                autoplay
-                playsinline
-                class="w-100 rounded"
-                style="max-height: 480px; border: 2px solid #0d6efd"
-              ></video>
-              <canvas
-                id="face-overlay-canvas"
-                style="
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  pointer-events: none;
-                "
-              ></canvas>
-            </div>
-            <canvas id="camera-canvas" class="d-none"></canvas>
-
-            <p id="camera-status" class="mt-3 text-muted">
-              Đang khởi động camera...
-            </p>
-
-            <button class="btn btn-primary mt-2" id="btn-start-capture">
-              ▶ Bắt đầu chụp 10 ảnh
-            </button>
           </div>
         </div>
       </div>
@@ -274,7 +850,7 @@
         <div class="modal-content">
           <div class="modal-header bg-primary text-white">
             <h5 class="modal-title" id="courseModalLabel">
-              📘 Thêm/Sửa khóa học
+              📘 Thêm/Sửa học phần
             </h5>
             <button
               type="button"
@@ -287,7 +863,7 @@
             <form id="courseForm">
               <input type="hidden" id="courseId" />
               <div class="mb-3">
-                <label for="courseName" class="form-label">Tên khóa học</label>
+                <label for="courseName" class="form-label">Tên học phần</label>
                 <input
                   type="text"
                   class="form-control"
@@ -382,17 +958,64 @@
 
     <!-- ======================= SIDEBAR ======================= -->
     <div class="sidebar">
-      <h5>Giảng viên: {{ user.full_name }}</h5>
 
-      <a href="#" onclick="showTab('courses')">📚 Khóa học</a>
-      <a href="#" onclick="showTab('attendance')">🕑 Lịch sử điểm danh</a>
+      <!-- HEADER -->
+      <div class="sidebar-header">
+        <div class="sidebar-avatar">
+          {{ user.full_name[0] }}
+        </div>
 
-      <hr />
+        <div class="sidebar-user-info">
+          <span class="sidebar-role">Giảng viên</span>
+          <h5>{{ user.full_name }}</h5>
+        </div>
+      </div>
 
-      <a href="#" onclick="showTab('student-manage')"> 👨‍🎓 Quản lý sinh viên </a>
+      <!-- MENU -->
+      <div class="sidebar-menu">
 
-      <hr />
-      <a href="/logout" class="text-danger">Đăng xuất</a>
+        <a href="#" class="sidebar-link active" onclick="showTab('courses')">
+          <span class="sidebar-icon">📚</span>
+          <div>
+            <h6>Học phần</h6>
+            <small>Quản lý lớp học & sinh viên</small>
+          </div>
+        </a>
+
+        <a href="#" class="sidebar-link" onclick="showTab('attendance')">
+          <span class="sidebar-icon">🕑</span>
+          <div>
+            <h6>Lịch sử điểm danh</h6>
+            <small>Xem lịch sử và thống kê</small>
+          </div>
+        </a>
+        <a href="#" class="sidebar-link" onclick="showTab('exams')">
+          <span class="sidebar-icon">📝</span>
+          <div>
+            <h6>Ca thi của tôi</h6>
+            <small>Lịch thi và điểm danh ca thi</small>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- QUICK STATS -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-icon">✨</div>
+
+        <div>
+          <h6>Realtime Attendance</h6>
+          <p>Điểm danh khuôn mặt realtime bằng AI.</p>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="sidebar-footer">
+        <a href="/logout" class="logout-btn">
+          ⬅ Đăng xuất
+        </a>
+      </div>
+
     </div>
 
     <!-- ======================= MAIN ======================= -->
@@ -407,7 +1030,7 @@
             type="button"
             role="tab"
           >
-            Khóa học
+            Học phần
           </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -446,15 +1069,9 @@
             📊 Thống kê
           </button>
         </li>
-        <li class="nav-item">
-          <button
-            class="nav-link"
-            id="tab-student-manage"
-            data-bs-toggle="tab"
-            data-bs-target="#student-manage"
-            type="button"
-          >
-            👨‍🎓 Quản lý sinh viên
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-exams" data-bs-toggle="tab" data-bs-target="#exams" type="button" role="tab">
+            📝 Ca thi
           </button>
         </li>
       </ul>
@@ -463,9 +1080,9 @@
         <!-- COURSES -->
         <div class="tab-pane fade show active" id="courses" role="tabpanel">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5>📘 Danh sách khóa học</h5>
+            <h5>📘 Danh sách học phần</h5>
             <button class="btn btn-primary" id="btn-open-course-modal">
-              ➕ Thêm khóa học
+              ➕ Thêm học phần
             </button>
           </div>
           <div id="course-list" class="row"></div>
@@ -485,9 +1102,6 @@
               <button class="btn btn-outline-success" id="btn-show-qr">
                 📷 Hiện mã QR
               </button>
-              <button class="btn btn-success" id="btn-open-import">
-                📥 Import Sinh viên
-              </button>
             </div>
           </div>
           <div id="student-list" class="list-group"></div>
@@ -502,7 +1116,7 @@
         <!-- STATISTICS -->
         <div class="tab-pane fade" id="statistics" role="tabpanel">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5>📊 Thống kê điểm danh</h5>
+            <h5 id="statistics-title">📊 Thống kê điểm danh</h5>
             <button class="btn btn-secondary" id="btn-export-stat">
               📤 Xuất Excel
             </button>
@@ -521,92 +1135,30 @@
             <tbody id="statistics-body"></tbody>
           </table>
 
-          <h5 class="mt-4">📈 Biểu đồ tỉ lệ điểm danh</h5>
-          <canvas id="attendanceChart" width="400" height="200"></canvas>
-        </div>
+          <h5 class="mt-4">📈 Biểu đồ tỉ lệ điểm danh theo sinh viên</h5>
 
-        <!-- ================= STUDENT MANAGE ================= -->
-        <div class="tab-pane fade" id="student-manage" role="tabpanel">
-          <h5 class="mb-3">👨‍🎓 Quản lý sinh viên toàn hệ thống</h5>
-
-          <div class="row g-4">
-            <!-- ===== CÁCH 1: CAMERA ===== -->
-            <div class="col-md-6">
-              <div class="card shadow-sm">
-                <div class="card-header fw-bold">
-                  📸 Đăng ký sinh viên bằng camera
-                </div>
-                <div class="card-body">
-                  <form id="form-register-camera">
-                    <div class="mb-2">
-                      <label class="form-label">Mã số sinh viên</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        name="student_id"
-                        id="manage-student-id"
-                        required
-                      />
-                    </div>
-
-                    <div class="mb-2">
-                      <label class="form-label">Họ và tên</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        name="name"
-                        id="manage-student-name"
-                        required
-                      />
-                    </div>
-
-                    <button
-                      class="btn btn-primary w-100"
-                      type="button"
-                      id="btn-open-camera"
-                    >
-                      📸 Mở camera & tự chụp 10 ảnh
-                    </button>
-                  </form>
-
-                  <div id="camera-result" class="mt-3 small"></div>
-                </div>
-              </div>
+          <div class="card p-3 mt-3">
+            <div class="small text-muted mb-3">
+              Biểu đồ hiển thị tỉ lệ đi học của từng sinh viên trong học phần.
             </div>
 
-            <!-- ===== CÁCH 2: ZIP ===== -->
-            <div class="col-md-6">
-              <div class="card shadow-sm">
-                <div class="card-header fw-bold">
-                  📦 Import sinh viên bằng ZIP
-                </div>
-                <div class="card-body">
-                  <p class="small text-muted">
-                    Cấu trúc ZIP:
-                    <br />
-                    <code>MSSV-HoTen/1.jpg, 2.jpg, ...</code>
-                  </p>
-
-                  <form id="form-register-zip">
-                    <input
-                      type="file"
-                      class="form-control mb-3"
-                      name="zip"
-                      accept=".zip"
-                      required
-                    />
-
-                    <button class="btn btn-success w-100" type="submit">
-                      📥 Import ZIP
-                    </button>
-                  </form>
-
-                  <div id="zip-result" class="mt-3 small"></div>
-                </div>
-              </div>
+            <div id="attendanceChartWrapper" style="position: relative; height: 420px;">
+              <canvas id="attendanceChart"></canvas>
             </div>
           </div>
-        </div>
+        </div> 
+        <!-- EXAMS -->
+        <div class="tab-pane fade" id="exams" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 class="mb-1">📝 Ca thi của tôi</h5>
+              <div class="text-muted small">Các ca thi mà bạn được phân công coi thi.</div>
+            </div>
+            <button class="btn btn-outline-primary" id="btn-reload-exams">🔄 Tải lại</button>
+          </div>
+          <div id="exam-list" class="row"></div>
+          <div id="exam-detail" class="mt-3"></div>
+        </div>  
       </div>
     </div>
 
@@ -628,6 +1180,8 @@
       let cameraStream = null;
 
       let attendanceChart = null;
+      let realtimeEventInterval = null;
+      let lecturerExamSessions = [];
 
       /* ======================= HELPERS ======================= */
       function qs(id) {
@@ -672,22 +1226,77 @@
         }, 3000);
       }
 
+      function getAttendanceColor(rate) {
+        if (rate >= 80) return "rgba(34, 197, 94, 0.85)";   // xanh lá
+        if (rate >= 60) return "rgba(59, 130, 246, 0.85)";  // xanh dương
+        if (rate >= 40) return "rgba(245, 158, 11, 0.85)";  // vàng cam
+        return "rgba(239, 68, 68, 0.85)";                   // đỏ
+      }
+
       async function setupWebcam(videoElement) {
         try {
-          const s = await navigator.mediaDevices.getUserMedia({ video: true });
+          console.log("Đang yêu cầu camera...");
+
+          const s = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+
+          console.log("Đã lấy stream:", s);
+
           videoElement.srcObject = s;
+
           await new Promise((resolve) => {
-            videoElement.onloadedmetadata = () => {
-              videoElement.play();
+            videoElement.onloadedmetadata = async () => {
+              await videoElement.play();
               resolve();
             };
           });
+
+          console.log("Camera ready");
+
           return s;
+
         } catch (err) {
-          alert("Không thể truy cập webcam!");
-          console.error("Webcam error:", err);
+          console.error("WEBCAM ERROR:", err);
+
+          alert("Không thể truy cập webcam: " + err.message);
+
           throw err;
         }
+      }
+
+      function setCurrentCourse(courseId, courseName) {
+        currentCourseId = Number(courseId);
+        currentCourseName = courseName || "";
+
+        const studentTitle = qs("student-title");
+        if (studentTitle) {
+          studentTitle.textContent = `🧑‍🎓 Danh sách sinh viên - ${currentCourseName}`;
+        }
+
+        const attendanceTitle = qs("attendance-title");
+        if (attendanceTitle) {
+          attendanceTitle.textContent = `📌 Lịch sử điểm danh - ${currentCourseName}`;
+        }
+
+        const statisticsTitle = qs("statistics-title");
+        if (statisticsTitle) {
+          statisticsTitle.textContent = `📊 Thống kê điểm danh - ${currentCourseName}`;
+        }
+      }
+
+
+      async function selectCourse(courseId, courseName, targetTab = "students") {
+        setCurrentCourse(courseId, courseName);
+
+        await Promise.allSettled([
+          loadCourseStudents(currentCourseId, currentCourseName),
+          loadAttendance(currentCourseId, currentCourseName),
+          loadStatistics(currentCourseId)
+        ]);
+
+        showTab(targetTab);
       }
 
       /* ======================= COURSES ======================= */
@@ -698,235 +1307,327 @@
             const courseList = qs("course-list");
             courseList.innerHTML = "";
 
+            /* EMPTY STATE */
+            if (!data || data.length === 0) {
+              courseList.innerHTML = `
+                <div class="col-12">
+
+                  <div class="course-empty">
+
+                    <div class="course-empty-icon">
+                      📚
+                    </div>
+
+                    <h4>
+                      Chưa có học phần nào
+                    </h4>
+
+                    <p>
+                      Hãy tạo học phần đầu tiên để bắt đầu quản lý sinh viên và điểm danh realtime.
+                    </p>
+
+                  </div>
+
+                </div>
+              `;
+              return;
+            }
+
             data.forEach((course) => {
               const col = document.createElement("div");
-              col.className = "col-md-6 mb-3";
+              col.className = "col-xl-4 col-lg-6 col-md-6 mb-4";
+
               col.innerHTML = `
-              <div class="card shadow-sm">
-                <div class="card-header">
-                  <h5 class="card-title mb-0">${course.name}</h5>
-                </div>
-                <div class="card-body">
-                  <p><strong>Học kỳ:</strong> ${course.semester}</p>
+              <div class="course-card">
 
-                  <button class="btn btn-outline-primary btn-sm"
-                    onclick="loadStudents(${
-                      course.id
-                    }, '${course.name.replaceAll("'", "\\'")}')">
-                    👨‍🎓 Xem SV
-                  </button>
+                  <!-- TOP BAR -->
+                  <div class="course-top-gradient"></div>
 
-                  <button class="btn btn-outline-secondary btn-sm ms-2"
-                    onclick="showAttendanceTab(${
-                      course.id
-                    }, '${course.name.replaceAll("'", "\\'")}')">
-                    📝 Lịch sử điểm danh
-                  </button>
+                  <!-- HEADER -->
+                  <div class="course-header">
 
-                  <button class="btn btn-outline-warning btn-sm ms-2"
-                    onclick="openCourseModal({id: ${
-                      course.id
-                    }, name: '${course.name.replaceAll(
-                "'",
-                "\\'"
-              )}', semester: '${course.semester.replaceAll("'", "\\'")}'})">
-                    ✏️ Sửa
-                  </button>
+                      <div class="course-icon">
+                          📘
+                      </div>
 
-                  <button class="btn btn-outline-danger btn-sm ms-2"
-                    onclick="deleteCourse(${course.id})">
-                    🗑️ Xóa
-                  </button>
-                </div>
+                      <div class="course-semester-badge">
+                          ${course.semester || "Học phần"}
+                      </div>
+
+                  </div>
+
+                  <!-- BODY -->
+                  <div class="course-body">
+
+                      <h4 class="course-title">
+                          ${course.name}
+                      </h4>
+
+                      <div class="course-meta">
+
+                          <div class="course-meta-item">
+                              <span>🆔</span>
+                              <span>ID học phần: ${course.id}</span>
+                          </div>
+
+                          <div class="course-meta-item">
+                              <span>📚</span>
+                              <span>${course.semester || "Chưa cập nhật học kỳ"}</span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- ACTIONS -->
+                  <div class="course-actions">
+                      <button
+                        class="course-btn-primary btn-view-students"
+                        data-course-id="${course.id}"
+                        data-course-name="${(course.name || "").replaceAll('"', "&quot;")}"
+                      >
+                        👨‍🎓 Xem sinh viên
+                      </button>
+
+                      <button
+                        class="course-btn-secondary btn-view-attendance"
+                        data-course-id="${course.id}"
+                        data-course-name="${(course.name || "").replaceAll('"', "&quot;")}"
+                      >
+                        🕑 Lịch sử điểm danh
+                      </button>
+                  </div>
+
+                  <!-- FOOTER -->
+                  <div class="course-footer">
+
+                      <button
+                          class="course-action-icon edit"
+                          onclick="openCourseModal({
+                              id: ${course.id},
+                              name: '${(course.name || "").replaceAll("'", "\\'")}',
+                              semester: '${(course.semester || "").replaceAll("'", "\\'")}'
+                          })"
+                      >
+                          ✏️
+                      </button>
+
+                      <button
+                          class="course-action-icon delete"
+                          onclick="deleteCourse(${course.id})"
+                      >
+                          🗑️
+                      </button>
+
+                  </div>
+
               </div>
-            `;
+              `;
+
               courseList.appendChild(col);
+              const studentBtn = col.querySelector(".btn-view-students");
+              const attendanceBtn = col.querySelector(".btn-view-attendance");
+
+              studentBtn.addEventListener("click", () => {
+                const id = studentBtn.dataset.courseId;
+                const name = studentBtn.dataset.courseName;
+
+                selectCourse(id, name, "students");
+              });
+
+              attendanceBtn.addEventListener("click", () => {
+                const id = attendanceBtn.dataset.courseId;
+                const name = attendanceBtn.dataset.courseName;
+
+                selectCourse(id, name, "attendance");
+              });
             });
           })
           .catch((err) => {
-            console.error("Lỗi khi tải khóa học:", err);
-            showToast("❌ Lỗi tải danh sách khóa học", "danger");
+            console.error("Lỗi khi tải học phần:", err);
+            showToast("❌ Lỗi tải danh sách học phần", "danger");
           });
       }
 
       /* ======================= STUDENTS ======================= */
-      function loadStudents(courseId, courseName) {
-        currentCourseId = courseId;
-        currentCourseName = courseName;
+      function loadCourseStudents(courseId, courseName) {
+        setCurrentCourse(courseId, courseName);
 
-        showTab("students");
-        qs(
-          "student-title"
-        ).textContent = `🧑‍🎓 Danh sách sinh viên - ${courseName}`;
+        const studentList = qs("student-list");
 
-        fetch(`/api/courses/${courseId}/students_with_embedding`)
-          .then((res) => res.json())
+        studentList.innerHTML = `
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-3 text-muted">
+              Đang tải danh sách sinh viên...
+            </p>
+          </div>
+        `;
+
+        fetch(`/api/courses/${courseId}/students_with_embedding?t=${Date.now()}`)
+          .then((res) => {
+            console.log("STATUS:", res.status);
+
+            if (!res.ok) {
+              throw new Error("HTTP " + res.status);
+            }
+
+            return res.json();
+          })
           .then((data) => {
-            const studentList = qs("student-list");
+            console.log("DATA:", data);
+
             studentList.innerHTML = "";
+
+            if (!Array.isArray(data) || data.length === 0) {
+              studentList.innerHTML = `
+                <div class="course-empty">
+                  <div class="course-empty-icon">👨‍🎓</div>
+                  <h4>Chưa có sinh viên</h4>
+                  <p>Học phần này chưa có sinh viên nào.</p>
+                </div>
+              `;
+              return;
+            }
 
             data.forEach((st) => {
               const div = document.createElement("div");
+
               div.className =
                 "list-group-item d-flex justify-content-between align-items-center";
 
               const info = document.createElement("span");
-              info.innerHTML = `<strong>${st.id}</strong> - ${st.full_name}`;
 
-              const btn = document.createElement("button");
-              btn.className = `btn btn-sm ${
-                st.has_embedding ? "btn-warning" : "btn-primary"
-              }`;
-              btn.textContent = st.has_embedding ? "Đăng ký lại" : "Đăng ký";
-              btn.onclick = () => handleRegisterFace(st.id, st.full_name);
+              info.innerHTML =
+                `<strong>${st.id || ""}</strong> - ${st.full_name || ""}`;
+
+              const status = document.createElement("span");
+
+              status.className =
+                `d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold small shadow-sm ${
+                  st.has_embedding
+                    ? "bg-success text-white"
+                    : "bg-danger text-white"
+                }`;
+
+              status.innerHTML = st.has_embedding
+                ? `🛡️ Đã xác thực`
+                : `⚠️ Chưa xác thực`;
 
               div.appendChild(info);
-              div.appendChild(btn);
+              div.appendChild(status);
+
               studentList.appendChild(div);
             });
           })
           .catch((err) => {
             console.error("Lỗi tải sinh viên:", err);
+
+            studentList.innerHTML = `
+              <div class="alert alert-danger rounded-4">
+                ❌ Không thể tải danh sách sinh viên
+              </div>
+            `;
+
             showToast("❌ Lỗi tải danh sách sinh viên", "danger");
           });
       }
 
-      /* ======================= FACE REGISTER ======================= */
-      async function handleRegisterFace(studentId, fullName) {
-        currentStudentId = studentId;
-        currentStudentName = fullName;
 
-        const modal = new bootstrap.Modal(qs("faceModal"));
-        modal.show();
-
-        const video = qs("video");
-        const status = qs("register-status");
-
-        status.innerHTML = "";
-        try {
-          stream = await setupWebcam(video);
-        } catch (e) {
-          status.innerHTML =
-            "<span class='text-danger'>Không thể truy cập webcam</span>";
-        }
+      // Giữ lại tên cũ để không lỗi các chỗ đang gọi loadStudents()
+      function loadStudents(courseId, courseName) {
+        selectCourse(courseId, courseName, "students");
       }
-
-      function captureAndSend() {
-        const video = qs("video");
-        const canvas = qs("canvas");
-        const status = qs("register-status");
-        const ctx = canvas.getContext("2d");
-
-        const capturedImages = [];
-        let count = 0;
-        const totalCaptures = 10;
-        const delay = 600;
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        status.innerHTML = "<span class='text-info'>Đang chụp ảnh...</span>";
-
-        const capture = () => {
-          ctx.drawImage(video, 0, 0);
-          canvas.toBlob((blob) => {
-            capturedImages.push(blob);
-            count++;
-
-            if (count < totalCaptures) {
-              setTimeout(capture, delay);
-            } else {
-              const formData = new FormData();
-              formData.append("student_id", currentStudentId);
-              formData.append("name", currentStudentName);
-              capturedImages.forEach((b, i) =>
-                formData.append("files", b, `frame_${i}.jpg`)
-              );
-
-              fetch("/register", { method: "POST", body: formData })
-                .then((res) => res.json())
-                .then((result) => {
-                  if (result.success) {
-                    status.innerHTML =
-                      "<span class='text-success'>Đăng ký thành công!</span>";
-                    if (currentCourseId)
-                      loadStudents(currentCourseId, currentCourseName);
-                  } else {
-                    status.innerHTML = `<span class='text-danger'>Đăng ký thất bại: ${result.message}</span>`;
-                  }
-                })
-                .catch((err) => {
-                  console.error(err);
-                  status.innerHTML =
-                    "<span class='text-danger'>Lỗi kết nối đến máy chủ</span>";
-                });
-            }
-          }, "image/jpeg");
-        };
-
-        capture();
-      }
-
-      /* stop webcam when close face modal */
-      qs("faceModal").addEventListener("hidden.bs.modal", () => {
-        if (stream) {
-          stream.getTracks().forEach((t) => t.stop());
-          stream = null;
-        }
-      });
 
       /* ======================= ATTENDANCE HISTORY ======================= */
       function groupAttendanceByDate(data) {
+
         const groups = {};
 
         data.forEach((att) => {
-          const date = new Date(att.time).toLocaleDateString("vi-VN", {
+
+          if (!att.time) return;
+
+          const d = new Date(att.time);
+
+          if (isNaN(d.getTime())) {
+            console.error("INVALID DATE:", att.time);
+            return;
+          }
+
+          const date = d.toLocaleDateString("vi-VN", {
             timeZone: "Asia/Ho_Chi_Minh",
           });
 
-          if (!groups[date]) groups[date] = [];
+          if (!groups[date]) {
+            groups[date] = [];
+          }
+
           groups[date].push(att);
+
         });
 
         return groups;
       }
 
       function showAttendanceTab(courseId, courseName) {
-        currentCourseId = courseId;
-        currentCourseName = courseName;
-        showTab("attendance");
-        loadAttendance(courseId, courseName);
+        selectCourse(courseId, courseName, "attendance");
       }
 
       function loadAttendance(courseId, courseName) {
-        if (isFetchingAttendance) return;
 
-        if (lastLoadedCourseId === courseId) {
-          qs(
-            "attendance-title"
-          ).textContent = `📌 Lịch sử điểm danh - ${courseName}`;
-          return;
-        }
-
-        isFetchingAttendance = true;
-        qs(
-          "attendance-title"
-        ).textContent = `📌 Lịch sử điểm danh - ${courseName}`;
+        setCurrentCourse(courseId, courseName);
 
         const list = qs("attendance-list");
-        list.innerHTML = "<p>⏳ Đang tải dữ liệu...</p>";
 
-        fetch(`/api/courses/${courseId}/attendance`)
-          .then((res) => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
+        list.innerHTML = `
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-3 text-muted">
+              Đang tải dữ liệu điểm danh...
+            </p>
+          </div>
+        `;
+
+        fetch(`/api/courses/${courseId}/attendance?t=${Date.now()}`)
+          .then(async (res) => {
+
+            console.log("STATUS:", res.status);
+
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+
+            console.log("ATTENDANCE DATA:", data);
+
+            return data;
           })
+
           .then((data) => {
-            lastLoadedCourseId = courseId;
+
             list.innerHTML = "";
 
             if (!Array.isArray(data) || data.length === 0) {
-              list.innerHTML = "<p>Không có dữ liệu điểm danh.</p>";
+
+              list.innerHTML = `
+                <div class="course-empty">
+
+                  <div class="course-empty-icon">
+                    📭
+                  </div>
+
+                  <h4>
+                    Chưa có dữ liệu điểm danh
+                  </h4>
+
+                  <p>
+                    Hiện chưa có sinh viên nào được điểm danh
+                    trong khóa học này.
+                  </p>
+
+                </div>
+              `;
+
               return;
             }
 
@@ -938,57 +1639,96 @@
                 const db = new Date(b.split("/").reverse().join("-"));
                 return db - da;
               })
+
               .forEach((date) => {
-                const dateDiv = document.createElement("div");
-                dateDiv.className = "fw-bold mt-4 mb-2 text-primary";
-                dateDiv.innerHTML = `📅 ${date}`;
-                list.appendChild(dateDiv);
+
+                const dateHeader = document.createElement("div");
+
+                dateHeader.className =
+                  "fw-bold text-primary mt-4 mb-3 fs-5";
+
+                dateHeader.innerHTML = `
+                  📅 ${date}
+                `;
+
+                list.appendChild(dateHeader);
 
                 grouped[date].forEach((att) => {
+
                   const recognized = Boolean(att.recognized);
 
-                  const div = document.createElement("div");
-                  div.className = "list-group-item ms-3";
+                  const card = document.createElement("div");
 
-                  div.innerHTML = `
-      <div class="d-flex align-items-center gap-3">
-        <img src="${
-          att.image_base64
-            ? `data:image/jpeg;base64,${att.image_base64}`
-            : "/static/img/no-face.png"
-        }"
-          width="70" height="70"
-          class="rounded"
-          style="object-fit:cover"
-        >
-        <div>
-          <strong>${att.name}</strong><br>
-          <small>
-            ${new Date(att.time).toLocaleTimeString("vi-VN", {
-              timeZone: "Asia/Ho_Chi_Minh",
-            })}
-          </small><br>
-          ${
-            recognized
-              ? "<span class='text-success'>✅ Đã nhận diện</span>"
-              : "<span class='text-danger'>❌ Chưa nhận</span>"
-          }
-        </div>
-      </div>
-    `;
-                  list.appendChild(div);
+                  card.className =
+                    "card border-0 shadow-sm mb-3 rounded-4";
+
+                  card.innerHTML = `
+                    <div class="card-body">
+
+                      <div class="d-flex align-items-center gap-3">
+
+                        <img
+                          src="${
+                            att.image_base64
+                              ? `data:image/jpeg;base64,${att.image_base64}`
+                              : '/static/img/no-face.png'
+                          }"
+                          width="70"
+                          height="70"
+                          class="rounded-4 border"
+                          style="object-fit: cover"
+                        >
+
+                        <div class="flex-grow-1">
+
+                          <h6 class="mb-1 fw-bold">
+                            ${att.full_name}
+                          </h6>
+
+                          <div class="text-muted small mb-2">
+                            🕒 ${new Date(att.time).toLocaleTimeString("vi-VN")}
+                          </div>
+
+                          ${
+                            recognized
+                              ? `
+                                <span class="badge bg-success">
+                                  ✅ Đã nhận diện
+                                </span>
+                              `
+                              : `
+                                <span class="badge bg-danger">
+                                  ❌ Chưa nhận diện
+                                </span>
+                              `
+                          }
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  `;
+
+                  list.appendChild(card);
+
                 });
+
               });
+
           })
+
           .catch((err) => {
-            console.error("Error loading attendance:", err);
-            list.innerHTML = `<p class="text-danger">Lỗi tải dữ liệu điểm danh</p>`;
-          })
-          .finally(() => {
-            isFetchingAttendance = false;
+
+            console.error("LOAD ATTENDANCE ERROR:", err);
+
+            list.innerHTML = `
+              <div class="alert alert-danger rounded-4">
+                ❌ Không thể tải dữ liệu điểm danh
+              </div>
+            `;
           });
       }
-
       /* ======================= QR ======================= */
       function showQR(courseId, courseName) {
         const qrContainer = qs("qr-container");
@@ -1020,68 +1760,137 @@
           return;
         }
 
+        console.log("▶ START REALTIME COURSE:", currentCourseId);
+
         try {
+          await fetch(`/api/courses/${currentCourseId}/students_with_embedding`);
           const res = await fetch("/api/realtime/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ course_id: currentCourseId }),
+
+            // FIX: đảm bảo kiểu số (tránh string/null bug backend)
+            body: JSON.stringify({ course_id: Number(currentCourseId) }),
           });
+
           const data = await res.json();
 
-          if (!data.running) {
-            throw new Error("Không khởi động được engine");
+          if (!res.ok || !data.running) {
+            throw new Error(data.error || "Không khởi động được engine");
           }
 
-          const modal = new bootstrap.Modal(qs("attendance-modal"));
+          const modalEl = qs("attendance-modal");
+          const modal = new bootstrap.Modal(modalEl);
           modal.show();
 
-          const streamImg = document.getElementById("attendance-stream");
-          streamImg.src = "/video_feed?" + Date.now();
+          const streamImg = qs("attendance-stream");
 
-          const cleanup = () => {
-            fetch("/api/realtime/stop", { method: "POST" }).catch(
-              console.error
-            );
-            streamImg.src = "";
+          streamImg.src = `/video_feed?t=${Date.now()}`;
+
+          qs("btn-close-attendance").onclick = () => {
+              modal.hide();
           };
 
-          qs("attendance-modal").addEventListener("hidden.bs.modal", cleanup, {
-            once: true,
-          });
-          qs("btn-close-attendance").onclick = cleanup;
-          qs("btn-close-attendance-x").onclick = cleanup;
+          qs("btn-close-attendance-x").onclick = () => {
+              modal.hide();
+          };
 
-          showToast(
-            "✅ Điểm danh realtime đã khởi động (bbox hiển thị từ server)",
-            "success"
-          );
+          // LOAD 1 LẦN
+          loadRealtimeEvents();
+
+          // CLEAR INTERVAL CŨ
+          if (realtimeEventInterval) {
+              clearInterval(realtimeEventInterval);
+              realtimeEventInterval = null;
+          }
+
+          // START INTERVAL MỚI
+          realtimeEventInterval = setInterval(() => {
+              loadRealtimeEvents();
+          }, 1000);
+
+          showToast("✅ Điểm danh realtime đã khởi động", "success");
         } catch (err) {
           console.error("Lỗi khởi động realtime:", err);
           showToast("❌ Không thể khởi động: " + err.message, "danger");
         }
       }
 
-      function closeAttendanceModal() {
-        const modalEl = qs("attendance-modal");
-        bootstrap.Modal.getInstance(modalEl)?.hide();
+      async function loadRealtimeEvents() {
+        try {
+            const res = await fetch('/api/realtime/events');
+            const data = await res.json();
 
-        if (window.attendanceStream) {
-          window.attendanceStream.getTracks().forEach((t) => t.stop());
-          window.attendanceStream = null;
+            const container = document.getElementById("realtime-events");
+
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            data.events.reverse().forEach(item => {
+
+                const div = document.createElement("div");
+                div.className = item.success
+                    ? "event-success"
+                    : "event-fail";
+                div.innerHTML = `
+                    <div><strong>${item.name}</strong></div>
+                    <div>${item.student_id || "Unknown"}</div>
+                    <div>Similarity: ${item.similarity || "-"}</div>
+                    <div>${item.timestamp}</div>
+                `;
+                container.appendChild(div); });
+        } catch (err) {
+            console.error("Load realtime events failed", err);
         }
-        if (window.attendanceInterval) {
-          clearInterval(window.attendanceInterval);
-          window.attendanceInterval = null;
-        }
-
-        const video = qs("attendance-video");
-        video.srcObject = null;
-
-        const canvas = qs("attendance-canvas");
-        const ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
+      let isStoppingRealtime = false;
+
+      async function stopRealtime() {
+        if (isStoppingRealtime) return;
+        isStoppingRealtime = true;
+
+        try {
+          // 1. Dừng engine camera ở backend
+          await fetch("/api/realtime/stop", {
+            method: "POST"
+          });
+        } catch (e) {
+          console.error("Stop realtime error:", e);
+        }
+
+        // 2. Ngắt luồng MJPEG trên trình duyệt
+        const streamImg = qs("attendance-stream");
+        if (streamImg) {
+          streamImg.removeAttribute("src");
+          streamImg.src = "";
+        }
+
+        // 3. Dừng interval lấy kết quả realtime
+        if (realtimeEventInterval) {
+          clearInterval(realtimeEventInterval);
+          realtimeEventInterval = null;
+        }
+
+        // 4. Xóa danh sách kết quả nhận diện
+        const events = qs("realtime-events");
+        if (events) {
+          events.innerHTML = "";
+        }
+
+        isStoppingRealtime = false;
+      }
+
+      async function closeAttendanceModal() {
+        await stopRealtime();
+
+        const modalEl = qs("attendance-modal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+
+        if (modal) {
+          modal.hide();
+        }
+      }
       /* ======================= COURSE CRUD ======================= */
       function populateYears() {
         const yearSelect = qs("courseYear");
@@ -1205,53 +2014,16 @@
         };
       }
 
-      /* ======================= IMPORT STUDENTS ======================= */
-      function openImportStudentsModal() {
-        if (!currentCourseId) {
-          showToast("❌ Vui lòng chọn một khóa học trước", "danger");
-          return;
-        }
-
-        const modal = new bootstrap.Modal(qs("importStudentsModal"));
-        const form = qs("importStudentsForm");
-        form.reset();
-        modal.show();
-
-        form.onsubmit = (e) => {
-          e.preventDefault();
-          const file = qs("studentFile").files[0];
-          if (!file) {
-            showToast("❌ Vui lòng chọn file Excel", "danger");
-            return;
-          }
-
-          const formData = new FormData();
-          formData.append("file", file);
-
-          fetch(`/api/courses/${currentCourseId}/import_students`, {
-            method: "POST",
-            body: formData,
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.error)
-                return showToast(`❌ Lỗi: ${data.error}`, "danger");
-              showToast("✅ Import sinh viên thành công", "success");
-              loadStudents(currentCourseId, currentCourseName);
-              modal.hide();
-            })
-            .catch((err) => {
-              console.error("Lỗi import:", err);
-              showToast("❌ Lỗi kết nối đến máy chủ", "danger");
-            });
-        };
-      }
-
       /* ======================= STATISTICS ======================= */
       function loadStatistics(courseId) {
         if (!courseId) {
-          showToast("❌ Vui lòng chọn một khóa học trước", "danger");
+          showToast("❌ Vui lòng chọn một học phần trước", "danger");
           return;
+        }
+
+        const statisticsTitle = qs("statistics-title");
+        if (statisticsTitle) {
+          statisticsTitle.textContent = `📊 Thống kê điểm danh - ${currentCourseName}`;
         }
 
         const tbody = qs("statistics-body");
@@ -1266,76 +2038,166 @@
             tbody.innerHTML = "";
 
             if (!Array.isArray(data) || data.length === 0) {
-              showToast("ℹ️ Khóa học chưa có dữ liệu điểm danh.", "info");
+              tbody.innerHTML = `
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">
+                    Chưa có dữ liệu thống kê
+                  </td>
+                </tr>
+              `;
+
+              if (attendanceChart) {
+                attendanceChart.destroy();
+                attendanceChart = null;
+              }
               return;
             }
-
-            const labels = data.map((x) => x.full_name);
-            const ratioData = data.map((x) => {
-              const total = x.attended + x.absent;
-              return total === 0 ? 0 : +((x.attended / total) * 100).toFixed(2);
+            // Chuẩn hóa dữ liệu
+            const normalized = data.map((stat) => {
+              const attended = Number(stat.attended || 0);
+              const absent = Number(stat.absent || 0);
+              const total = attended + absent;
+              const ratio = total === 0 ? 0 : +((attended / total) * 100).toFixed(2);
+              return {
+                student_id: stat.student_id,
+                full_name: stat.full_name,
+                attended,
+                absent,
+                total,
+                ratio
+              };
             });
 
-            data.forEach((stat) => {
-              const total = stat.attended + stat.absent;
-              const ratio =
-                total === 0 ? 0 : ((stat.attended / total) * 100).toFixed(2);
-
+            // Sắp xếp giảm dần theo tỉ lệ đi học
+            normalized.sort((a, b) => b.ratio - a.ratio);
+            // Render table
+            normalized.forEach((stat) => {
               const row = document.createElement("tr");
               row.innerHTML = `
-              <td>${stat.student_id}</td>
-              <td>${stat.full_name}</td>
-              <td>${stat.attended}</td>
-              <td>${stat.absent}</td>
-              <td>${ratio}%</td>
-            `;
+                <td>${stat.student_id}</td>
+                <td>${stat.full_name}</td>
+                <td>${stat.attended}</td>
+                <td>${stat.absent}</td>
+                <td>
+                  <span class="fw-semibold ${
+                    stat.ratio >= 80
+                      ? "text-success"
+                      : stat.ratio >= 60
+                      ? "text-primary"
+                      : stat.ratio >= 40
+                      ? "text-warning"
+                      : "text-danger"
+                  }">
+                    ${stat.ratio}%
+                  </span>
+                </td>
+              `;
               tbody.appendChild(row);
             });
+            // Dữ liệu biểu đồ
+            const labels = normalized.map(
+              (x) => `${x.full_name} (${x.student_id})`
+            );
+            const ratioData = normalized.map((x) => x.ratio);
+            const barColors = normalized.map((x) => getAttendanceColor(x.ratio));
 
+            // Tự tăng chiều cao chart nếu danh sách dài
+            const wrapper = qs("attendanceChartWrapper");
+            if (wrapper) {
+              wrapper.style.height = `${Math.max(320, normalized.length * 48)}px`;
+            }
             const ctx = qs("attendanceChart").getContext("2d");
-            if (attendanceChart) attendanceChart.destroy();
-
+            if (attendanceChart) {
+              attendanceChart.destroy();
+            }
             attendanceChart = new Chart(ctx, {
-              type: "line",
+              type: "bar",
               data: {
                 labels,
                 datasets: [
                   {
                     label: "Tỉ lệ đi học (%)",
                     data: ratioData,
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 4,
-                  },
-                ],
+                    backgroundColor: barColors,
+                    borderColor: barColors,
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    maxBarThickness: 26
+                  }
+                ]
               },
               options: {
+                indexAxis: "y",
                 responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                  duration: 800
+                },
                 plugins: {
-                  legend: { position: "top" },
+                  legend: {
+                    display: false
+                  },
                   title: {
                     display: true,
-                    text: "Biểu đồ tỉ lệ sinh viên đi học (%)",
+                    text: "So sánh tỉ lệ điểm danh theo sinh viên",
+                    font: {
+                      size: 18,
+                      weight: "bold"
+                    },
+                    padding: {
+                      bottom: 20
+                    }
                   },
                   tooltip: {
-                    callbacks: { label: (c) => `${c.raw}%` },
-                  },
+                    backgroundColor: "rgba(15, 23, 42, 0.92)",
+                    padding: 12,
+                    cornerRadius: 10,
+                    callbacks: {
+                      label: function (context) {
+                        const item = normalized[context.dataIndex];
+                        return [
+                          `Tỉ lệ đi học: ${item.ratio}%`,
+                          `Đi học: ${item.attended} buổi`,
+                          `Vắng: ${item.absent} buổi`,
+                          `Tổng số buổi: ${item.total}`
+                        ];
+                      }
+                    }
+                  }
                 },
                 scales: {
-                  y: {
+                  x: {
                     beginAtZero: true,
                     max: 100,
-                    title: { display: true, text: "Tỉ lệ (%)" },
-                  },
-                  x: {
                     ticks: {
-                      maxRotation: 45,
-                      minRotation: 45,
-                      autoSkip: false,
+                      callback: function (value) {
+                        return value + "%";
+                      }
                     },
+                    title: {
+                      display: true,
+                      text: "Tỉ lệ đi học (%)",
+                      font: {
+                        weight: "bold"
+                      }
+                    },
+                    grid: {
+                      color: "rgba(148, 163, 184, 0.18)"
+                    }
                   },
-                },
-              },
+                  y: {
+                    ticks: {
+                      font: {
+                        size: 12
+                      }
+                    },
+                    grid: {
+                      display: false
+                    }
+                  }
+                }
+              }
             });
           })
           .catch((err) => {
@@ -1394,303 +2256,110 @@
         );
         showToast("✅ Xuất file Excel thành công", "success");
       }
-
-      /* ======================= CAMERA REGISTRATION (STUDENT MANAGE) ======================= */
-
-      // Load face-api.js models (sử dụng TinyFaceDetector cho tốc độ)
-      let faceApiLoaded = false;
-
-      async function loadFaceApiModels() {
-        if (faceApiLoaded) return;
-
-        try {
-          const MODEL_URL =
-            "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
-          await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-          faceApiLoaded = true;
-          console.log("✅ Face-API models loaded");
-        } catch (err) {
-          console.error("❌ Error loading face-api models:", err);
-        }
+      /* ======================= EXAM ======================= */
+      function formatExamDate(dateValue) {
+        if (!dateValue) return "—";
+        const d = new Date(dateValue);
+        if (isNaN(d.getTime())) return dateValue;
+        return d.toLocaleDateString("vi-VN");
       }
 
-      // Vẽ bbox realtime
-      let faceDetectionInterval = null;
+      function formatExamTime(timeValue) {
+        if (!timeValue) return "—";
+        return String(timeValue).slice(0, 5);
+      }
 
-      async function drawFaceBoxes(video, canvas) {
-        const ctx = canvas.getContext("2d");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+      function examStatusBadge(status) {
+        const map = {
+          upcoming: ["bg-primary", "Sắp diễn ra"],
+          ongoing: ["bg-success", "Đang diễn ra"],
+          finished: ["bg-secondary", "Đã kết thúc"],
+        };
+        const [cls, text] = map[status] || ["bg-light text-dark", status || "—"];
+        return `<span class="badge ${cls}">${text}</span>`;
+      }
+      async function viewExamStudents(id, name) {
+        const detail = qs("exam-detail");
+        detail.innerHTML = `<div class="alert alert-info">⏳ Đang tải sinh viên ca thi...</div>`;
+        const res = await fetch(`/api/exam-sessions/${id}/students`);
+        const data = await res.json();
+        if (!res.ok || data.error) return detail.innerHTML = `<div class="alert alert-danger">❌ ${data.detail || data.error}</div>`;
+        const rows = data.map(st => `<tr><td><strong>${st.full_name || ""}</strong></td><td><code>${st.id || ""}</code></td><td>${st.has_embedding ? '<span class="badge bg-success">Đã xác thực</span>' : '<span class="badge bg-danger">Chưa xác thực</span>'}</td><td>${st.recognized ? '<span class="badge bg-success">Đã điểm danh</span>' : '<span class="badge bg-secondary">Chưa điểm danh</span>'}</td></tr>`).join("");
+        detail.innerHTML = `<div class="section-card"><div class="section-card-header"><h6>👨‍🎓 Sinh viên dự thi - ${name}</h6></div><div class="section-card-body p-0"><table class="table table-hover mb-0"><thead><tr><th>Sinh viên</th><th>MSSV</th><th>Khuôn mặt</th><th>Điểm danh ca thi</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="text-center text-muted py-3">Chưa có sinh viên</td></tr>'}</tbody></table></div></div>`;
+      }
 
-        const detections = await faceapi.detectAllFaces(
-          video,
-          new faceapi.TinyFaceDetectorOptions({
-            inputSize: 224,
-            scoreThreshold: 0.5,
+      async function viewExamAttendance(id, name) {
+        const detail = qs("exam-detail");
+        detail.innerHTML = `<div class="alert alert-info">⏳ Đang tải lịch sử điểm danh ca thi...</div>`;
+        const res = await fetch(`/api/exam-sessions/${id}/attendance`);
+        const data = await res.json();
+        if (!res.ok || data.error) return detail.innerHTML = `<div class="alert alert-danger">❌ ${data.detail || data.error}</div>`;
+        const rows = data.map(a => `<tr><td><img src="${a.image_base64 ? `data:image/jpeg;base64,${a.image_base64}` : '/static/img/no-face.png'}" width="48" height="48" class="rounded" style="object-fit:cover;border:1px solid #dee2e6" /></td><td><strong>${a.student_name || ""}</strong></td><td><code>${a.student_id || ""}</code></td><td>${a.time ? new Date(a.time).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}</td><td>${a.recognized ? '<span class="badge bg-success">Đã nhận diện</span>' : '<span class="badge bg-danger">Chưa nhận</span>'}</td><td>${a.similarity ?? "—"}</td></tr>`).join("");
+        detail.innerHTML = `<div class="section-card"><div class="section-card-header"><h6>🕑 Lịch sử điểm danh ca thi - ${name}</h6></div><div class="section-card-body p-0"><table class="table table-hover mb-0"><thead><tr><th>Ảnh</th><th>Sinh viên</th><th>MSSV</th><th>Thời gian</th><th>Trạng thái</th><th>Similarity</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có dữ liệu điểm danh</td></tr>'}</tbody></table></div></div>`;
+      }
+
+      function loadLecturerExamSessions() {
+        const list = qs("exam-list");
+        if (!list) return;
+        list.innerHTML = `<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Đang tải ca thi...</p></div>`;
+
+        fetch(`/api/lecturer/${lecturerId}/exam-sessions?t=${Date.now()}`)
+          .then(async res => {
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.detail || data.error || `HTTP ${res.status}`);
+            return data;
           })
-        );
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (detections.length > 0) {
-          detections.forEach((det) => {
-            const box = det.box;
-            ctx.strokeStyle = "#0d6efd";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-            // Vẽ text
-            ctx.fillStyle = "#0d6efd";
-            ctx.font = "bold 16px Arial";
-            ctx.fillText("Face Detected", box.x, box.y - 10);
+          .then(data => {
+            lecturerExamSessions = Array.isArray(data) ? data : [];
+            renderLecturerExamSessions(lecturerExamSessions);
+          })
+          .catch(err => {
+            list.innerHTML = `<div class="col-12"><div class="alert alert-danger rounded-4">❌ Không thể tải ca thi: ${err.message}</div></div>`;
           });
-        }
       }
 
-      qs("btn-open-camera").addEventListener("click", async () => {
-        const studentId = qs("manage-student-id").value.trim();
-        const name = qs("manage-student-name").value.trim();
-
-        if (!studentId || !name) {
-          showToast("❌ Vui lòng nhập đầy đủ MSSV và họ tên", "danger");
+      function renderLecturerExamSessions(listData) {
+        const list = qs("exam-list");
+        list.innerHTML = "";
+        if (!listData.length) {
+          list.innerHTML = `<div class="col-12"><div class="course-empty"><div class="course-empty-icon">📝</div><h4>Chưa có ca thi</h4><p>Bạn chưa được phân công ca thi nào.</p></div></div>`;
           return;
         }
-
-        // Load face-api models
-        await loadFaceApiModels();
-
-        // Mở modal camera
-        const modal = new bootstrap.Modal(qs("cameraModal"));
-        modal.show();
-
-        // Bật camera
-        const video = qs("camera-video");
-        const overlayCanvas = qs("face-overlay-canvas");
-        const status = qs("camera-status");
-
-        try {
-          cameraStream = await setupWebcam(video);
-          status.textContent =
-            "✅ Camera đã sẵn sàng. Hãy đưa khuôn mặt vào khung hình.";
-
-          // Bắt đầu vẽ bbox realtime
-          if (faceApiLoaded) {
-            faceDetectionInterval = setInterval(() => {
-              drawFaceBoxes(video, overlayCanvas);
-            }, 100);
-          }
-        } catch (err) {
-          status.innerHTML =
-            "<span class='text-danger'>❌ Không thể mở camera</span>";
-          console.error(err);
-        }
-      });
-
-      // Stop camera khi đóng modal
-      qs("cameraModal").addEventListener("hidden.bs.modal", () => {
-        if (cameraStream) {
-          cameraStream.getTracks().forEach((t) => t.stop());
-          cameraStream = null;
-        }
-
-        if (faceDetectionInterval) {
-          clearInterval(faceDetectionInterval);
-          faceDetectionInterval = null;
-        }
-
-        const video = qs("camera-video");
-        video.srcObject = null;
-
-        const overlayCanvas = qs("face-overlay-canvas");
-        const ctx = overlayCanvas.getContext("2d");
-        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-        qs("camera-status").textContent = "Đang khởi động camera...";
-      });
-
-      // Bắt đầu chụp ảnh (CROP FACE)
-      qs("btn-start-capture").addEventListener("click", async () => {
-        const studentId = qs("manage-student-id").value.trim();
-        const name = qs("manage-student-name").value.trim();
-        const video = qs("camera-video");
-        const canvas = qs("camera-canvas");
-        const ctx = canvas.getContext("2d");
-        const status = qs("camera-status");
-        const result = qs("camera-result");
-
-        // Dừng vẽ bbox
-        if (faceDetectionInterval) {
-          clearInterval(faceDetectionInterval);
-          faceDetectionInterval = null;
-        }
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        const images = [];
-        let successCount = 0;
-
-        for (let i = 1; i <= 10; i++) {
-          status.innerText = `📸 Đang chụp ảnh ${i}/10...`;
-
-          // Detect face
-          const detections = await faceapi.detectAllFaces(
-            video,
-            new faceapi.TinyFaceDetectorOptions({
-              inputSize: 224,
-              scoreThreshold: 0.5,
-            })
-          );
-
-          if (detections.length === 0) {
-            status.innerText = `⚠️ Không phát hiện khuôn mặt ở ảnh ${i}, tiếp tục...`;
-            await new Promise((r) => setTimeout(r, 600));
-            continue;
-          }
-
-          // Lấy khuôn mặt lớn nhất
-          const largest = detections.reduce((prev, curr) =>
-            curr.box.width * curr.box.height > prev.box.width * prev.box.height
-              ? curr
-              : prev
-          );
-
-          const box = largest.box;
-
-          // Thêm padding 20%
-          const padding = 0.2;
-          const pw = box.width * padding;
-          const ph = box.height * padding;
-
-          const x = Math.max(0, box.x - pw);
-          const y = Math.max(0, box.y - ph);
-          const w = Math.min(canvas.width - x, box.width + 2 * pw);
-          const h = Math.min(canvas.height - y, box.height + 2 * ph);
-
-          // Vẽ full frame
-          ctx.drawImage(video, 0, 0);
-
-          // Crop face
-          const faceCanvas = document.createElement("canvas");
-          faceCanvas.width = w;
-          faceCanvas.height = h;
-          const faceCtx = faceCanvas.getContext("2d");
-          faceCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
-
-          // Convert to blob
-          const blob = await new Promise((res) =>
-            faceCanvas.toBlob(res, "image/jpeg", 0.95)
-          );
-
-          images.push(blob);
-          successCount++;
-
-          await new Promise((r) => setTimeout(r, 600));
-        }
-
-        if (successCount < 5) {
-          status.innerHTML = `<span class='text-danger'>❌ Chỉ chụp được ${successCount}/10 ảnh có khuôn mặt. Cần ít nhất 5 ảnh!</span>`;
-
-          // Khởi động lại bbox detection
-          if (faceApiLoaded) {
-            const overlayCanvas = qs("face-overlay-canvas");
-            faceDetectionInterval = setInterval(() => {
-              drawFaceBoxes(video, overlayCanvas);
-            }, 100);
-          }
-          return;
-        }
-
-        // Dừng camera
-        if (cameraStream) {
-          cameraStream.getTracks().forEach((t) => t.stop());
-          cameraStream = null;
-        }
-
-        status.innerText = `⏳ Đang xử lý đăng ký ${successCount} ảnh khuôn mặt...`;
-
-        const fd = new FormData();
-        fd.append("student_id", studentId);
-        fd.append("name", name);
-        images.forEach((b, i) => fd.append("images", b, `face_${i}.jpg`));
-
-        try {
-          const res = await fetch("/api/students/register/camera", {
-            method: "POST",
-            body: fd,
-          });
-          const data = await res.json();
-
-          if (res.ok) {
-            status.innerHTML = `<span class="text-success">✅ ${data.message}</span>`;
-            result.innerHTML = `<div class="alert alert-success mt-2">
-              <strong>✅ Đăng ký thành công!</strong><br>
-              MSSV: ${studentId}<br>
-              Họ tên: ${name}<br>
-              Số ảnh: ${successCount}<br>
-              Mật khẩu mặc định: <strong>123456</strong>
+        listData.forEach(exam => {
+          const total = Number(exam.total_students || 0);
+          const present = Number(exam.present_count || 0);
+          const percent = total ? Math.round((present / total) * 100) : 0;
+          const col = document.createElement("div");
+          col.className = "col-xl-4 col-lg-6 col-md-6 mb-4";
+          col.innerHTML = `
+            <div class="course-card">
+              <div class="course-top-gradient"></div>
+              <div class="course-header"><div class="course-icon">📝</div><div>${examStatusBadge(exam.status)}</div></div>
+              <div class="course-body">
+                <h4 class="course-title">${exam.name}</h4>
+                <div class="course-meta">
+                  <div class="course-meta-item"><span>📚</span><span>${exam.course_name || "—"}</span></div>
+                  <div class="course-meta-item"><span>📅</span><span>${formatExamDate(exam.exam_date)} | ${formatExamTime(exam.start_time)} - ${formatExamTime(exam.end_time)}</span></div>
+                  <div class="course-meta-item"><span>🏫</span><span>${exam.room || "Chưa có phòng"}</span></div>
+                </div>
+                <div class="mt-4"><div class="d-flex justify-content-between small text-muted mb-1"><span>Đã điểm danh</span><span>${present}/${total} (${percent}%)</span></div><div class="progress" style="height: 10px;"><div class="progress-bar" style="width: ${percent}%"></div></div></div>
+              </div>
+              <div class="course-actions">
+                <button class="course-btn-primary" onclick="viewExamStudents(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">👨‍🎓 Sinh viên</button>
+                <button class="course-btn-secondary" onclick="viewExamAttendance(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">🕑 Lịch sử</button>
+              </div>
             </div>`;
-
-            // Reset form
-            qs("form-register-camera").reset();
-
-            // Đóng modal sau 3 giây
-            setTimeout(() => {
-              bootstrap.Modal.getInstance(qs("cameraModal"))?.hide();
-            }, 3000);
-          } else {
-            status.innerHTML = `<span class="text-danger">❌ ${
-              data.error || "Lỗi đăng ký"
-            }</span>`;
-            result.innerHTML = `<span class="text-danger">❌ ${
-              data.error || "Lỗi đăng ký"
-            }</span>`;
-          }
-        } catch (err) {
-          console.error(err);
-          status.innerHTML = "<span class='text-danger'>❌ Lỗi kết nối</span>";
-          result.innerHTML =
-            "<span class='text-danger'>❌ Lỗi kết nối đến server</span>";
-        }
-      });
-
-      /* ======================= ZIP IMPORT ======================= */
-      qs("form-register-zip").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const result = qs("zip-result");
-        const formData = new FormData(e.target);
-
-        result.innerHTML = "<span class='text-info'>⏳ Đang xử lý...</span>";
-
-        try {
-          const res = await fetch("/api/students/register/zip", {
-            method: "POST",
-            body: formData,
-          });
-          const data = await res.json();
-
-          if (res.ok) {
-            let html =
-              "<div class='text-success'><strong>✅ Kết quả import:</strong><ul>";
-            data.forEach((item) => {
-              html += `<li>${item.student_id} - ${item.name}: ${item.status}</li>`;
-            });
-            html += "</ul></div>";
-            result.innerHTML = html;
-          } else {
-            result.innerHTML = `<span class='text-danger'>❌ ${
-              data.error || "Lỗi import"
-            }</span>`;
-          }
-        } catch (err) {
-          console.error(err);
-          result.innerHTML = "<span class='text-danger'>❌ Lỗi kết nối</span>";
-        }
-      });
-
+          list.appendChild(col);
+        });
+      }
       /* ======================= EVENTS (ONE PLACE) ======================= */
       document.addEventListener("DOMContentLoaded", () => {
         loadCourses();
+        loadLecturerExamSessions();
+
+        qs("btn-reload-exams")?.addEventListener("click", loadLecturerExamSessions);
+
+        qs("tab-exams")?.addEventListener("shown.bs.tab", loadLecturerExamSessions);
 
         document.querySelectorAll(".sidebar a[data-tab]").forEach((a) => {
           a.addEventListener("click", (e) => {
@@ -1705,9 +2374,6 @@
         qs("btn-open-course-modal").addEventListener("click", () =>
           openCourseModal()
         );
-        qs("btn-open-import").addEventListener("click", () =>
-          openImportStudentsModal()
-        );
 
         qs("btn-open-attendance").addEventListener("click", () =>
           openAttendanceModal()
@@ -1719,19 +2385,36 @@
           closeAttendanceModal()
         );
 
+        const attendanceModalEl = qs("attendance-modal");
+
+        if (attendanceModalEl) {
+          attendanceModalEl.addEventListener("hidden.bs.modal", () => {
+            stopRealtime();
+          });
+        }
+
         qs("btn-show-qr").addEventListener("click", () => {
           if (!currentCourseId)
             return showToast("❌ Vui lòng chọn một khóa học trước", "danger");
           showQR(currentCourseId, currentCourseName);
         });
 
-        qs("btn-start-register").addEventListener("click", () =>
-          captureAndSend()
-        );
+        qs("tab-students").addEventListener("shown.bs.tab", () => {
+          if (currentCourseId) {
+            loadCourseStudents(currentCourseId, currentCourseName);
+          }
+        });
 
-        qs("tab-statistics").addEventListener("click", () => {
-          if (currentCourseId) loadStatistics(currentCourseId);
-          else showToast("❌ Vui lòng chọn một khóa học trước", "danger");
+        qs("tab-attendance").addEventListener("shown.bs.tab", () => {
+          if (currentCourseId) {
+            loadAttendance(currentCourseId, currentCourseName);
+          }
+        });
+
+        qs("tab-statistics").addEventListener("shown.bs.tab", () => {
+          if (currentCourseId) {
+            loadStatistics(currentCourseId);
+          }
         });
 
         qs("btn-export-stat").addEventListener("click", () =>

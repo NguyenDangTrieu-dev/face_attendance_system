@@ -5,11 +5,15 @@ import time
 import threading
 import logging
 from dataclasses import dataclass
+import traceback
 from typing import Any, Dict, List, Optional, Tuple
+from PIL import Image, ImageDraw, ImageFont
 
 import cv2
 import numpy as np
 
+from attendance_api import save_attendance
+from face_rec_SM_api import image_to_base64
 from face_rec_SM_api import recognize_face
 
 logger = logging.getLogger(__name__)
@@ -76,7 +80,6 @@ class Track:
     name: str = "Unknown"
     student_id: Optional[str] = None
     similarity: Optional[float] = None
-
     # AI scheduling
     last_ai_ts: float = 0.0
     ai_inflight: bool = False
@@ -98,14 +101,14 @@ class RealtimeEngine:
     def __init__(
         self,
         camera_src: int = 0,
-        jpeg_quality: int = 80,
+        jpeg_quality: int = 60,
         detect_every_n: int = 2,
         confirm_frames: int = 2,
         ttl_seconds: float = 0.9,
         iou_threshold: float = 0.35,
-        max_tracks: int = 20,
+        max_tracks: int = 10,
         ai_interval_sec: float = 0.8,
-        attendance_cooldown_sec: float = 25.0,
+        attendance_cooldown_sec: float = 30.0,
     ):
         self.camera_src = camera_src
         self.jpeg_quality = jpeg_quality
@@ -132,11 +135,14 @@ class RealtimeEngine:
 
         self._latest_jpeg: Optional[bytes] = None
         self._last_results: List[Dict[str, Any]] = []
-
         self._last_marked: Dict[str, float] = {}
-
+        self._last_unknown_ts = 0
+        self._event_logged = set()
         self.on_attendance: Optional[callable] = None
-
+        self._font = ImageFont.truetype( "arial.ttf", 22)
+        self._realtime_events: List[Dict[str, Any]] = []
+        self._evented_students = set()
+        
     def is_running(self) -> bool:
         with self._lock:
             return self._running
@@ -149,6 +155,9 @@ class RealtimeEngine:
         with self._lock:
             return list(self._last_results)
 
+    def get_realtime_events(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            return list(self._realtime_events[-50:])
     def start(self, course_id: int, camera_src: Optional[int] = None):
         with self._lock:
             if self._running:
@@ -162,11 +171,18 @@ class RealtimeEngine:
 
             self._tracks = {}
             self._last_results = []
+            # RESET REALTIME EVENTS
+            self._realtime_events = []
+            self._event_logged = set()
             self._frame_idx = 0
             self._next_track_id = 1
             self._last_marked = {}
 
         self._cap = cv2.VideoCapture(self.camera_src)
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self._cap.set(cv2.CAP_PROP_FPS, 30)
+        self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         if not self._cap.isOpened():
             with self._lock:
                 self._running = False
@@ -280,6 +296,21 @@ class RealtimeEngine:
         for d in dets:
             x1, y1, x2, y2 = d["bbox"]
             x1, y1, x2, y2 = _clamp_bbox(x1, y1, x2, y2, w, h)
+            # Kích thước face
+            face_w = x2 - x1
+            face_h = y2 - y1
+            # AREA
+            face_area = face_w * face_h
+            # Frame size
+            frame_area = w * h
+            # Tỉ lệ face/frame
+            ratio = face_area / frame_area
+            # Chỉ nhận mặt gần camera
+            if ratio < 0.025:
+                continue
+            # Optional: bỏ mặt quá nhỏ
+            if face_w < 120 or face_h < 120:
+                continue
             out.append({**d, "bbox": [x1, y1, x2, y2]})
 
         return out
@@ -383,18 +414,39 @@ class RealtimeEngine:
             )
 
             tracks[tid] = tr
-
+            
+            # Unknown detection event
+            if tr.name == "Unknown" and tr.confirmed:
+                unknown_key = f"unknown_{tr.track_id}"
+                # Đã log rồi
+                if unknown_key in self._event_logged:
+                    continue
+                # Cooldown unknown events
+                if (now - self._last_unknown_ts) < 2:
+                    continue
+                self._last_unknown_ts = now
+                self._event_logged.add(unknown_key)
+                
+                event = {
+                    "student_id": None,
+                    "name": "Unknown",
+                    "similarity": tr.similarity,
+                    "success": False,
+                    "timestamp": time.strftime("%H:%M:%S")
+                }
+                with self._lock:
+                    self._realtime_events.append(event)
+                    self._realtime_events = self._realtime_events[-100:]
+                    
             self._maybe_mark_attendance(tr, course_id, frame_bgr, now)
 
         expired = [tid for tid, tr in tracks.items() if (now - tr.last_seen) > self.ttl_seconds]
-
         for tid in expired:
             tracks.pop(tid, None)
-
         with self._lock:
             self._tracks = tracks
 
-    def crop_face(frame: np.ndarray, bbox, padding=0.15):
+    def crop_face(self, frame: np.ndarray, bbox, padding=0.15):
         h, w = frame.shape[:2]
         x1, y1, x2, y2 = bbox
 
@@ -415,32 +467,121 @@ class RealtimeEngine:
 
         return face
 
+    def _save_attendance_async(self, sid, course_id, face):
+        try:
+
+            # Resize face nhỏ hơn để giảm base64 size
+            face = cv2.resize(face, (160, 160))
+
+            # Convert base64
+            face_base64 = image_to_base64(face)
+
+            logger.debug(
+                "[REALTIME] Saving attendance sid=%s course_id=%s",
+                sid,
+                course_id
+            )
+
+            result = save_attendance(
+                student_id=sid,
+                course_id=course_id,
+                image_base64=face_base64
+            )
+
+            logger.debug(
+                "[REALTIME] Attendance result sid=%s result=%s",
+                sid,
+                result
+            )
+
+        except Exception:
+            logger.exception("save_attendance_async failed")
+
     def _maybe_mark_attendance(self, tr: Track, course_id: int, frame_bgr: np.ndarray, now: float):
+
+        # Chưa nhận diện được
         if not tr.student_id or not tr.confirmed:
             return
 
         sid = str(tr.student_id)
 
+        # Đã log trước đó
+        if sid in self._event_logged:
+            return
+
+        # Cooldown
         last = self._last_marked.get(sid)
         if last and (now - last) < self.attendance_cooldown_sec:
             return
 
+        # Crop face
         face = self.crop_face(frame_bgr, tr.bbox)
         if face is None:
             return
 
-        self._last_marked[sid] = now
+        try:
+            logger.info(
+                "[REALTIME] Saving attendance sid=%s course_id=%s",
+                sid,
+                course_id
+            )
 
-        if self.on_attendance:
-            try:
-                self.on_attendance(
-                    track=tr,
-                    course_id=course_id,
-                    face_img=face,   # ⬅️ CHỈ face
-                    timestamp=now
-                )
-            except Exception:
-                logger.exception("on_attendance failed")
+            # Resize nhỏ cho nhẹ
+            face = cv2.resize(face, (160, 160))
+
+            # Convert base64
+            face_base64 = image_to_base64(face)
+
+            # Save DB
+            result = save_attendance(
+                student_id=sid,
+                course_id=course_id,
+                image_base64=face_base64
+            )
+
+            logger.info(
+                "[REALTIME] Attendance result sid=%s result=%s",
+                sid,
+                result
+            )
+
+            # Mark cooldown
+            self._last_marked[sid] = now
+
+            # Mark event logged
+            self._event_logged.add(sid)
+
+            # Push realtime event 1 lần duy nhất
+            event = {
+                "student_id": sid,
+                "name": tr.name,
+                "similarity": tr.similarity,
+                "success": True,
+                "timestamp": time.strftime("%H:%M:%S")
+            }
+
+            with self._lock:
+                self._realtime_events.append(event)
+                self._realtime_events = self._realtime_events[-100:]
+
+            # Callback
+            if self.on_attendance:
+                try:
+                    self.on_attendance(
+                        track=tr,
+                        course_id=course_id,
+                        face_img=face,
+                        timestamp=now
+                    )
+                except Exception:
+                    logger.exception("on_attendance failed")
+
+        except Exception as e:
+            logger.error(
+                "[REALTIME ERROR] save_attendance failed: %s",
+                str(e)
+            )
+            traceback.print_exc()
 
     def _build_results(self, now: float) -> List[Dict[str, Any]]:
         with self._lock:
@@ -476,14 +617,14 @@ class RealtimeEngine:
                 except Exception:
                     pass
 
-            cv2.putText(
-                frame_bgr,
-                label,
-                (x1, max(18, y1 - 8)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                color,
-                2,
-                cv2.LINE_AA,
-            )
+            # Convert OpenCV -> PIL
+            img_pil = Image.fromarray(cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB))
+
+            draw = ImageDraw.Draw(img_pil)
+
+            # PIL dùng RGB
+            pil_color = (int(color[2]), int(color[1]), int(color[0]))
+            draw.text((x1, max(18, y1 - 28)), label, font=self._font, fill=pil_color)
+            # Convert PIL -> OpenCV
+            frame_bgr = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
         return frame_bgr
