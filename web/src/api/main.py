@@ -12,7 +12,7 @@ from src.api.student.student_api import student_bp
 from src.api.admin.admin_api import admin_bp
 from view_routes import view_bp
 from backup_api import backup_bp
-from exam_api import exam_bp
+from exam_api import exam_bp, bind_exam_realtime_engine
 
 from auth import auth
 from realtime_engine import RealtimeEngine
@@ -20,6 +20,9 @@ from realtime_engine import RealtimeEngine
 app = Flask(__name__)
 
 engine = RealtimeEngine()
+
+# Gắn RealtimeEngine cho API điểm danh realtime ca thi
+bind_exam_realtime_engine(engine)
 
 app.register_blueprint(view_bp)
 app.register_blueprint(admin_bp)

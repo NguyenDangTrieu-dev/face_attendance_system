@@ -10,6 +10,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
 
@@ -741,7 +742,84 @@
           padding: 12px;
           border-radius: 10px;
       }
-      </style>
+  
+
+      /* =========================
+        ADMIN/STUDENT SYNC OVERRIDES
+      ========================= */
+      :root {
+        --primary: #0d6efd;
+        --primary-dark: #0b5ed7;
+        --sidebar-bg: #343a40;
+        --sidebar-width: 260px;
+        --body-bg: #f0f2f5;
+        --card-bg: #ffffff;
+        --border-radius: 12px;
+        --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--body-bg);
+        font-family: 'Be Vietnam Pro', sans-serif;
+        font-size: 14px;
+        color: #212529;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0; bottom: 0; left: 0;
+        width: var(--sidebar-width);
+        min-height: 100vh;
+        padding: 0;
+        background: linear-gradient(180deg, #1a1f2e 0%, #343a40 100%);
+        color: #fff;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 3px 0 15px rgba(0,0,0,0.2);
+      }
+
+      .sidebar-brand {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(13, 110, 253, 0.15);
+      }
+      .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 8px; }
+      .sidebar-brand h6 { margin: 0; font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+      .sidebar-brand h5 { margin: 4px 0 0; font-size: 14px; font-weight: 600; color: #fff; }
+      .sidebar-section { padding: 14px 12px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); font-weight: 600; }
+      .sidebar a.sidebar-link, .sidebar-footer a {
+        padding: 10px 16px; display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.75);
+        text-decoration: none; border-radius: 8px; margin: 2px 8px; font-size: 13.5px; font-weight: 500; transition: all 0.2s;
+        background: transparent; border: 0; box-shadow: none;
+      }
+      .sidebar a.sidebar-link:hover, .sidebar a.sidebar-link.active { background: rgba(13,110,253,0.25); color: #fff; transform: none; }
+      .sidebar-icon { width: auto; height: auto; border-radius: 0; background: transparent; font-size: 16px; }
+      .sidebar-link h6 { margin: 0; font-size: 13.5px; font-weight: 500; }
+      .sidebar-link small, .sidebar-card { display: none; }
+      .sidebar-footer { margin-top: auto; padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+      .logout-btn { width: auto; justify-content: flex-start; padding: 10px 16px; border-radius: 8px; background: transparent; color: rgba(220,53,69,0.85) !important; }
+      .logout-btn:hover { background: rgba(220,53,69,0.15) !important; color: #dc3545 !important; }
+
+      .main-content { margin-left: var(--sidebar-width); min-height: 100vh; padding: 0; background: var(--body-bg); }
+      .top-header { height: 60px; background: #fff; border-bottom: 1px solid #e9ecef; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 99; box-shadow: 0 1px 6px rgba(0,0,0,.06); }
+      .top-header h5 { margin: 0; font-size: 16px; font-weight: 700; }
+      .lecturer-badge { background: linear-gradient(135deg,#0d6efd,#6610f2); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+      .content-area { padding: 24px; }
+      .section-card { background: #fff; border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid #e9ecef; overflow: hidden; margin-bottom: 24px; }
+      .section-card-body { padding: 20px; }
+      .nav-tabs { border-bottom: 2px solid #e9ecef; gap: 4px; }
+      .nav-tabs .nav-link { border: none; border-radius: 8px 8px 0 0; color: #6c757d; font-weight: 500; font-size: 13.5px; padding: 10px 18px; box-shadow: none; }
+      .nav-tabs .nav-link:hover { color: var(--primary); background: #f0f6ff; }
+      .nav-tabs .nav-link.active { color: var(--primary); background: #fff; border-bottom: 2px solid var(--primary); margin-bottom: -2px; font-weight: 600; }
+      .card, .course-card, .modal-content, .list-group-item, .table { border-radius: var(--border-radius) !important; box-shadow: var(--shadow); border: 1px solid #e9ecef !important; }
+      .btn, .form-control, .form-select { border-radius: 8px; font-size: 13.5px; }
+      .btn:hover { transform: none; }
+      .course-semester-badge, .schedule-tag { display: inline-block; background:#e7f1ff; color:#0d6efd; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:500; }
+      @media(max-width: 768px) { .sidebar{position:static;width:100%;min-height:auto}.main-content{margin-left:0}.top-header{position:static} }
+
+    </style>
 
     <!-- JS libs (LOAD ONCE) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -880,12 +958,14 @@
                       <option value="" disabled selected>Chọn học kỳ</option>
                       <option value="HK1">HK1</option>
                       <option value="HK2">HK2</option>
+                      <option value="HK Hè">HK Hè</option>
                     </select>
                   </div>
                   <div class="col">
                     <select class="form-select" id="courseYear" required>
-                      <option value="" disabled selected>Chọn năm</option>
+                      <option value="" disabled selected>Chọn khóa học phần</option>
                     </select>
+                    <small class="text-muted">Dạng 2 năm, ví dụ: 2025-2026</small>
                   </div>
                 </div>
               </div>
@@ -958,68 +1038,41 @@
 
     <!-- ======================= SIDEBAR ======================= -->
     <div class="sidebar">
-
-      <!-- HEADER -->
-      <div class="sidebar-header">
-        <div class="sidebar-avatar">
-          {{ user.full_name[0] }}
-        </div>
-
-        <div class="sidebar-user-info">
-          <span class="sidebar-role">Giảng viên</span>
-          <h5>{{ user.full_name }}</h5>
-        </div>
+      <div class="sidebar-brand">
+        <div class="brand-icon">👨‍🏫</div>
+        <h6>Hệ thống điểm danh</h6>
+        <h5>{{ user.full_name }}</h5>
       </div>
 
-      <!-- MENU -->
-      <div class="sidebar-menu">
+      <div class="sidebar-section">Giảng viên</div>
+      <a href="#" class="sidebar-link active" id="nav-courses" data-tab="courses" onclick="showTab('courses')">
+        <span class="sidebar-icon">📚</span><div><h6>Học phần</h6><small>Quản lý lớp học & sinh viên</small></div>
+      </a>
+      <a href="#" class="sidebar-link" id="nav-attendance" data-tab="attendance" onclick="showTab('attendance')">
+        <span class="sidebar-icon">🕑</span><div><h6>Lịch sử điểm danh</h6><small>Xem lịch sử và thống kê</small></div>
+      </a>
+      <a href="#" class="sidebar-link" id="nav-statistics" data-tab="statistics" onclick="showTab('statistics')">
+        <span class="sidebar-icon">📊</span><div><h6>Thống kê</h6><small>Tỉ lệ điểm danh</small></div>
+      </a>
+      <a href="#" class="sidebar-link" id="nav-exams" data-tab="exams" onclick="showTab('exams')">
+        <span class="sidebar-icon">📝</span><div><h6>Ca thi của tôi</h6><small>Lịch thi và điểm danh ca thi</small></div>
+      </a>
 
-        <a href="#" class="sidebar-link active" onclick="showTab('courses')">
-          <span class="sidebar-icon">📚</span>
-          <div>
-            <h6>Học phần</h6>
-            <small>Quản lý lớp học & sinh viên</small>
-          </div>
-        </a>
-
-        <a href="#" class="sidebar-link" onclick="showTab('attendance')">
-          <span class="sidebar-icon">🕑</span>
-          <div>
-            <h6>Lịch sử điểm danh</h6>
-            <small>Xem lịch sử và thống kê</small>
-          </div>
-        </a>
-        <a href="#" class="sidebar-link" onclick="showTab('exams')">
-          <span class="sidebar-icon">📝</span>
-          <div>
-            <h6>Ca thi của tôi</h6>
-            <small>Lịch thi và điểm danh ca thi</small>
-          </div>
-        </a>
-
-      </div>
-
-      <!-- QUICK STATS -->
-      <div class="sidebar-card">
-        <div class="sidebar-card-icon">✨</div>
-
-        <div>
-          <h6>Realtime Attendance</h6>
-          <p>Điểm danh khuôn mặt realtime bằng AI.</p>
-        </div>
-      </div>
-
-      <!-- FOOTER -->
       <div class="sidebar-footer">
-        <a href="/logout" class="logout-btn">
-          ⬅ Đăng xuất
-        </a>
+        <a href="/logout" class="logout-btn">🚪 Đăng xuất</a>
       </div>
-
     </div>
 
     <!-- ======================= MAIN ======================= -->
     <div class="main-content">
+      <div class="top-header">
+        <h5 id="page-title">📚 Học phần giảng dạy</h5>
+        <div class="d-flex align-items-center gap-3">
+          <span class="lecturer-badge">👨‍🏫 GIẢNG VIÊN</span>
+          <span style="font-size:13px;color:#6c757d;">{{ user.full_name }}</span>
+        </div>
+      </div>
+      <div class="content-area">
       <ul class="nav nav-tabs" id="mainTab" role="tablist">
         <li class="nav-item" role="presentation">
           <button
@@ -1104,6 +1157,17 @@
               </button>
             </div>
           </div>
+          <div class="section-card mb-3">
+            <div class="section-card-body">
+              <h6 class="fw-bold mb-3">➕ Thêm sinh viên vào học phần đang chọn</h6>
+              <div class="row g-2">
+                <div class="col-md-3"><input class="form-control" id="addCourseStudentId" placeholder="MSSV" /></div>
+                <div class="col-md-4"><input class="form-control" id="addCourseStudentName" placeholder="Họ tên nếu SV chưa tồn tại" /></div>
+                <div class="col-md-3"><select class="form-select" id="addCourseStudentAdmission"><option value="">Khóa trúng tuyển</option></select></div>
+                <div class="col-md-2 d-grid"><button class="btn btn-primary" id="btn-add-course-student" type="button">Thêm</button></div>
+              </div>
+            </div>
+          </div>
           <div id="student-list" class="list-group"></div>
         </div>
 
@@ -1160,6 +1224,7 @@
           <div id="exam-detail" class="mt-3"></div>
         </div>  
       </div>
+      </div>
     </div>
 
     <!-- Bootstrap JS (LOAD ONCE at end) -->
@@ -1182,16 +1247,63 @@
       let attendanceChart = null;
       let realtimeEventInterval = null;
       let lecturerExamSessions = [];
+      let currentExamId = null;
+      let currentExamName = "";
+      let examRealtimeInterval = null;
+      let realtimeMode = null; // course | exam
+      let isClosingExamRealtime = false;
 
       /* ======================= HELPERS ======================= */
       function qs(id) {
         return document.getElementById(id);
       }
 
+      const tabTitles = {
+        courses: '📚 Học phần giảng dạy',
+        students: '👨‍🎓 Sinh viên trong học phần',
+        attendance: '🕑 Lịch sử điểm danh',
+        statistics: '📊 Thống kê điểm danh',
+        exams: '📝 Ca thi của tôi',
+      };
+
       function showTab(tabId) {
         const btn = qs("tab-" + tabId);
         if (!btn) return;
         new bootstrap.Tab(btn).show();
+        document.querySelectorAll('.sidebar a.sidebar-link').forEach(a => a.classList.remove('active'));
+        qs('nav-' + tabId)?.classList.add('active');
+        if (qs('page-title')) qs('page-title').textContent = tabTitles[tabId] || '';
+      }
+
+      function parseCourseSemester(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(/^(HK1|HK2|HK Hè|HK He)[\s-]+(\d{4}(?:-\d{4})?)$/i);
+        if (match) return { semester: match[1].replace('HK He', 'HK Hè'), year: match[2] };
+        const parts = raw.split('-');
+        if (parts.length >= 3 && /^HK/i.test(parts[0])) return { semester: parts[0], year: `${parts[1]}-${parts[2]}` };
+        if (parts.length === 2) return { semester: parts[0], year: parts[1] };
+        return { semester: '', year: '' };
+      }
+
+      function formatCourseSemesterLabel(value) {
+        const parsed = parseCourseSemester(value);
+        if (!parsed.semester && !parsed.year) return value || '—';
+        return `${parsed.semester} · ${parsed.year}`;
+      }
+
+      function populateAdmissionCourseSelect(selectId) {
+        const sel = qs(selectId);
+        if (!sel) return;
+        const currentValue = sel.value;
+        sel.innerHTML = '<option value="">Khóa trúng tuyển</option>';
+        const cur = new Date().getFullYear();
+        for (let y = 2018; y <= cur + 1; y++) {
+          const opt = document.createElement('option');
+          opt.value = `${y}-${y + 4}`;
+          opt.textContent = `${y}-${y + 4}`;
+          sel.appendChild(opt);
+        }
+        if (currentValue) sel.value = currentValue;
       }
 
       function showToast(message, type = "success") {
@@ -1317,17 +1429,13 @@
                     <div class="course-empty-icon">
                       📚
                     </div>
-
                     <h4>
                       Chưa có học phần nào
                     </h4>
-
                     <p>
                       Hãy tạo học phần đầu tiên để bắt đầu quản lý sinh viên và điểm danh realtime.
                     </p>
-
                   </div>
-
                 </div>
               `;
               return;
@@ -1351,7 +1459,7 @@
                       </div>
 
                       <div class="course-semester-badge">
-                          ${course.semester || "Học phần"}
+                          ${formatCourseSemesterLabel(course.semester) || "Học phần"}
                       </div>
 
                   </div>
@@ -1372,7 +1480,7 @@
 
                           <div class="course-meta-item">
                               <span>📚</span>
-                              <span>${course.semester || "Chưa cập nhật học kỳ"}</span>
+                              <span>${formatCourseSemesterLabel(course.semester) || "Chưa cập nhật học kỳ"}</span>
                           </div>
                       </div>
                   </div>
@@ -1494,26 +1602,33 @@
               div.className =
                 "list-group-item d-flex justify-content-between align-items-center";
 
-              const info = document.createElement("span");
+              const info = document.createElement("div");
+              info.innerHTML = `
+                <strong>${st.id || ""}</strong> - ${st.full_name || ""}
+                <div class="small text-muted">${st.admission_course || 'Chưa có khóa trúng tuyển'}${st.major ? ' · ' + st.major : ''}</div>
+              `;
 
-              info.innerHTML =
-                `<strong>${st.id || ""}</strong> - ${st.full_name || ""}`;
+              const actions = document.createElement("div");
+              actions.className = "d-flex align-items-center gap-2";
 
               const status = document.createElement("span");
-
               status.className =
                 `d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold small shadow-sm ${
                   st.has_embedding
                     ? "bg-success text-white"
                     : "bg-danger text-white"
                 }`;
+              status.innerHTML = st.has_embedding ? `🛡️ Đã xác thực` : `⚠️ Chưa xác thực`;
 
-              status.innerHTML = st.has_embedding
-                ? `🛡️ Đã xác thực`
-                : `⚠️ Chưa xác thực`;
+              const removeBtn = document.createElement("button");
+              removeBtn.className = "btn btn-outline-danger btn-sm";
+              removeBtn.textContent = "🗑️ Xóa";
+              removeBtn.onclick = () => removeStudentFromCourse(st.id);
 
+              actions.appendChild(status);
+              actions.appendChild(removeBtn);
               div.appendChild(info);
-              div.appendChild(status);
+              div.appendChild(actions);
 
               studentList.appendChild(div);
             });
@@ -1535,6 +1650,45 @@
       // Giữ lại tên cũ để không lỗi các chỗ đang gọi loadStudents()
       function loadStudents(courseId, courseName) {
         selectCourse(courseId, courseName, "students");
+      }
+
+      async function addStudentToCurrentCourse() {
+        if (!currentCourseId) return showToast('❌ Vui lòng chọn một học phần trước', 'danger');
+        const payload = {
+          student_id: qs('addCourseStudentId')?.value.trim(),
+          full_name: qs('addCourseStudentName')?.value.trim(),
+          admission_course: qs('addCourseStudentAdmission')?.value || null,
+        };
+        if (!payload.student_id) return showToast('❌ Vui lòng nhập MSSV', 'danger');
+        try {
+          const res = await fetch(`/api/courses/${currentCourseId}/students`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) return showToast(`❌ ${data.error || data.detail || 'Không thể thêm sinh viên'}`, 'danger');
+          showToast(`✅ ${data.message || 'Đã thêm sinh viên vào học phần'}`, 'success');
+          qs('addCourseStudentId').value = '';
+          qs('addCourseStudentName').value = '';
+          loadCourseStudents(currentCourseId, currentCourseName);
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      }
+
+      async function removeStudentFromCourse(studentId) {
+        if (!currentCourseId || !studentId) return;
+        if (!confirm(`Xóa sinh viên ${studentId} khỏi học phần này?`)) return;
+        try {
+          const res = await fetch(`/api/courses/${currentCourseId}/students/${studentId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (!res.ok || data.error) return showToast(`❌ ${data.error || data.detail || 'Không thể xóa sinh viên'}`, 'danger');
+          showToast('✅ Đã xóa sinh viên khỏi học phần', 'success');
+          loadCourseStudents(currentCourseId, currentCourseName);
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
       }
 
       /* ======================= ATTENDANCE HISTORY ======================= */
@@ -1755,6 +1909,10 @@
 
       /* ======================= REALTIME MODAL ======================= */
       async function openAttendanceModal() {
+        realtimeMode = "course";
+        currentExamId = null;
+        currentExamName = "";
+
         if (!currentCourseId) {
           showToast("❌ Vui lòng chọn một khóa học trước!", "danger");
           return;
@@ -1779,7 +1937,16 @@
           }
 
           const modalEl = qs("attendance-modal");
-          const modal = new bootstrap.Modal(modalEl);
+          const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+          qs("attendanceModalLabel").textContent =
+            `Điểm danh realtime - ${currentCourseName || "Học phần"}`;
+
+          const sidebarTitle = modalEl.querySelector(".sidebar-title");
+          if (sidebarTitle) {
+            sidebarTitle.textContent = "Kết quả nhận diện";
+          }
+
           modal.show();
 
           const streamImg = qs("attendance-stream");
@@ -1787,11 +1954,11 @@
           streamImg.src = `/video_feed?t=${Date.now()}`;
 
           qs("btn-close-attendance").onclick = () => {
-              modal.hide();
+              closeAttendanceModal();
           };
 
           qs("btn-close-attendance-x").onclick = () => {
-              modal.hide();
+              closeAttendanceModal();
           };
 
           // LOAD 1 LẦN
@@ -1878,6 +2045,10 @@
           events.innerHTML = "";
         }
 
+        if (realtimeMode === "course") {
+          realtimeMode = null;
+        }
+
         isStoppingRealtime = false;
       }
 
@@ -1894,19 +2065,18 @@
       /* ======================= COURSE CRUD ======================= */
       function populateYears() {
         const yearSelect = qs("courseYear");
-        yearSelect.innerHTML =
-          '<option value="" disabled selected>Chọn năm</option>';
+        if (!yearSelect) return;
+        const currentValue = yearSelect.value;
+        yearSelect.innerHTML = '<option value="" disabled selected>Chọn khóa học phần</option>';
 
         const currentYear = new Date().getFullYear();
-        const startYear = 2020;
-        const endYear = currentYear + 1;
-
-        for (let y = startYear; y <= endYear; y++) {
+        for (let y = 2020; y <= currentYear + 2; y++) {
           const opt = document.createElement("option");
-          opt.value = y;
-          opt.textContent = y;
+          opt.value = `${y}-${y + 1}`;
+          opt.textContent = `${y}-${y + 1}`;
           yearSelect.appendChild(opt);
         }
+        if (currentValue) yearSelect.value = currentValue;
       }
 
       function createCourse(courseData) {
@@ -1978,9 +2148,9 @@
           courseIdInput.value = course.id;
 
           courseNameInput.value = course.name || "";
-          const [sem, year] = (course.semester || "").split("-");
-          semesterSelect.value = sem || "";
-          yearSelect.value = year || "";
+          const parsed = parseCourseSemester(course.semester || "");
+          semesterSelect.value = parsed.semester || "";
+          yearSelect.value = parsed.year || "";
         } else {
           title.textContent = "📘 Thêm khóa học";
           courseIdInput.value = "";
@@ -2348,10 +2518,180 @@
                 <button class="course-btn-primary" onclick="viewExamStudents(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">👨‍🎓 Sinh viên</button>
                 <button class="course-btn-secondary" onclick="viewExamAttendance(${exam.id}, '${String(exam.name).replaceAll("'", "\\'")}')">🕑 Lịch sử</button>
               </div>
+              <div class="course-footer">
+                <button
+                  class="btn btn-danger w-100"
+                  onclick="openExamRealtimeModal(${exam.id}, '${String(exam.name).replaceAll("'", "\'")}')"
+                >
+                  📷 Điểm danh realtime ca thi
+                </button>
+              </div>
             </div>`;
           list.appendChild(col);
         });
       }
+
+      /* ======================= EXAM REALTIME ======================= */
+      async function openExamRealtimeModal(examId, examName) {
+        currentExamId = examId;
+        currentExamName = examName || "";
+        realtimeMode = "exam";
+
+        try {
+          const res = await fetch(`/api/exam-sessions/${examId}/realtime/start`, {
+            method: "POST"
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            throw new Error(data.detail || data.error || "Không khởi động được điểm danh ca thi");
+          }
+
+          const modalEl = qs("attendance-modal");
+          const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+          qs("attendanceModalLabel").textContent =
+            `📷 Điểm danh realtime ca thi - ${currentExamName}`;
+
+          const sidebarTitle = modalEl.querySelector(".sidebar-title");
+          if (sidebarTitle) {
+            sidebarTitle.textContent = "Sinh viên đã điểm danh";
+          }
+
+          const streamImg = qs("attendance-stream");
+          if (streamImg) {
+            streamImg.src = `/video_feed?t=${Date.now()}`;
+          }
+
+          modal.show();
+
+          await loadExamRealtimeAttendance();
+
+          if (examRealtimeInterval) {
+            clearInterval(examRealtimeInterval);
+            examRealtimeInterval = null;
+          }
+
+          examRealtimeInterval = setInterval(() => {
+            loadExamRealtimeAttendance();
+          }, 1000);
+
+          showToast("✅ Đã bắt đầu điểm danh realtime ca thi", "success");
+
+        } catch (err) {
+          console.error("OPEN EXAM REALTIME ERROR:", err);
+          realtimeMode = null;
+          currentExamId = null;
+          currentExamName = "";
+          showToast("❌ " + err.message, "danger");
+        }
+      }
+
+      async function loadExamRealtimeAttendance() {
+        if (!currentExamId) return;
+
+        try {
+          const res = await fetch(`/api/exam-sessions/${currentExamId}/attendance?t=${Date.now()}`);
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            throw new Error(data.detail || data.error || "Không tải được dữ liệu điểm danh ca thi");
+          }
+
+          const container = qs("realtime-events");
+          if (!container) return;
+
+          container.innerHTML = "";
+
+          if (!Array.isArray(data) || data.length === 0) {
+            container.innerHTML = `
+              <div class="text-muted small">
+                Chưa có sinh viên nào được nhận diện trong ca thi này.
+              </div>
+            `;
+            return;
+          }
+
+          data.slice(0, 50).forEach(item => {
+            const div = document.createElement("div");
+            div.className = item.recognized ? "event-success" : "event-fail";
+
+            div.innerHTML = `
+              <div><strong>${item.student_name || "Không rõ"}</strong></div>
+              <div>MSSV: ${item.student_id || "—"}</div>
+              <div>Similarity: ${item.similarity ?? "—"}</div>
+              <div>${item.time ? new Date(item.time).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : ""}</div>
+            `;
+
+            container.appendChild(div);
+          });
+
+        } catch (err) {
+          console.error("LOAD EXAM REALTIME ATTENDANCE ERROR:", err);
+        }
+      }
+
+      async function closeExamRealtimeModal(hideModal = true) {
+        if (isClosingExamRealtime) return;
+
+        isClosingExamRealtime = true;
+
+        const closedExamId = currentExamId;
+        const closedExamName = currentExamName;
+
+        try {
+          if (closedExamId) {
+            await fetch(`/api/exam-sessions/${closedExamId}/realtime/stop`, {
+              method: "POST"
+            });
+          }
+        } catch (err) {
+          console.error("STOP EXAM REALTIME ERROR:", err);
+        }
+
+        const streamImg = qs("attendance-stream");
+        if (streamImg) {
+          streamImg.removeAttribute("src");
+          streamImg.src = "";
+        }
+
+        if (examRealtimeInterval) {
+          clearInterval(examRealtimeInterval);
+          examRealtimeInterval = null;
+        }
+
+        if (realtimeEventInterval) {
+          clearInterval(realtimeEventInterval);
+          realtimeEventInterval = null;
+        }
+
+        const container = qs("realtime-events");
+        if (container) {
+          container.innerHTML = "";
+        }
+
+        currentExamId = null;
+        currentExamName = "";
+        realtimeMode = null;
+
+        if (hideModal) {
+          const modalEl = qs("attendance-modal");
+          bootstrap.Modal.getInstance(modalEl)?.hide();
+        }
+
+        if (closedExamId) {
+          loadLecturerExamSessions();
+
+          const examsTab = qs("exams");
+          if (examsTab && examsTab.classList.contains("active")) {
+            viewExamAttendance(closedExamId, closedExamName);
+          }
+        }
+
+        isClosingExamRealtime = false;
+      }
+
       /* ======================= EVENTS (ONE PLACE) ======================= */
       document.addEventListener("DOMContentLoaded", () => {
         loadCourses();
@@ -2371,25 +2711,42 @@
           });
         });
 
+        populateAdmissionCourseSelect('addCourseStudentAdmission');
+
         qs("btn-open-course-modal").addEventListener("click", () =>
           openCourseModal()
         );
 
+        qs("btn-add-course-student")?.addEventListener("click", addStudentToCurrentCourse);
+
         qs("btn-open-attendance").addEventListener("click", () =>
           openAttendanceModal()
         );
-        qs("btn-close-attendance").addEventListener("click", () =>
-          closeAttendanceModal()
-        );
-        qs("btn-close-attendance-x").addEventListener("click", () =>
-          closeAttendanceModal()
-        );
+        qs("btn-close-attendance").addEventListener("click", () => {
+          if (realtimeMode === "exam") {
+            closeExamRealtimeModal(true);
+          } else {
+            closeAttendanceModal();
+          }
+        });
+
+        qs("btn-close-attendance-x").addEventListener("click", () => {
+          if (realtimeMode === "exam") {
+            closeExamRealtimeModal(true);
+          } else {
+            closeAttendanceModal();
+          }
+        });
 
         const attendanceModalEl = qs("attendance-modal");
 
         if (attendanceModalEl) {
           attendanceModalEl.addEventListener("hidden.bs.modal", () => {
-            stopRealtime();
+            if (realtimeMode === "exam") {
+              closeExamRealtimeModal(false);
+            } else {
+              stopRealtime();
+            }
           });
         }
 

@@ -217,9 +217,8 @@ def import_students(course_id):
         'message': 'imported'
     })
 
-@course_bp.route(
-    '/<int:course_id>/students_with_embedding',
-    methods=['GET'])
+@course_bp.route('/<int:course_id>/students_with_embedding', methods=['GET'])
+@role_required([1, 2])
 def get_students_with_embedding(course_id):
 
     conn = get_db_connection()
@@ -232,6 +231,8 @@ def get_students_with_embedding(course_id):
         SELECT
             u.id,
             u.full_name,
+            u.admission_course,
+            u.major,
 
             CASE
                 WHEN e.user_id IS NOT NULL
@@ -240,15 +241,11 @@ def get_students_with_embedding(course_id):
             END AS has_embedding
 
         FROM users u
-
         JOIN course_students cs
             ON cs.student_id = u.id
-
         LEFT JOIN embeddings e
             ON e.user_id = u.id
-
         WHERE cs.course_id = %s
-
         ORDER BY u.full_name
     """, (course_id,))
 
@@ -266,18 +263,17 @@ def get_students_with_embedding(course_id):
 def get_students_in_course(course_id):
 
     try:
-
         conn = get_db_connection()
-
         cur = conn.cursor(
             cursor_factory=RealDictCursor
         )
-
         cur.execute("""
             SELECT
                 u.id,
                 u.full_name,
-                u.role_id
+                u.role_id,
+                u.admission_course,
+                u.major
 
             FROM course_students cs
 

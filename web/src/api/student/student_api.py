@@ -37,6 +37,37 @@ def table_exists(cur, table_name):
     return bool(cur.fetchone()["exists"])
 
 
+def column_exists(cur, table_name, column_name):
+    cur.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = %s
+              AND column_name = %s
+        ) AS exists
+    """, (table_name, column_name))
+    return bool(cur.fetchone()["exists"])
+
+
+def ensure_student_profile_columns(cur):
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS admission_course VARCHAR(20)")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS major VARCHAR(120)")
+
+
+def user_can_manage_course(cur, course_id):
+    current_user = get_current_user()
+    role_id = int(current_user.get("role_id") or 0)
+    if role_id == 1:
+        return True
+    if role_id != 2:
+        return False
+
+    lecturer_id = current_user.get("user_id")
+    cur.execute("SELECT 1 FROM courses WHERE id = %s AND lecturer_id = %s", (course_id, lecturer_id))
+    return cur.fetchone() is not None
+
+
 def decode_data_url_to_cv2_image(data_url):
     if not data_url:
         return None
@@ -59,6 +90,7 @@ def safe_invalidate_embedding_cache():
 
 
 def fetch_students(cur):
+    ensure_student_profile_columns(cur)
     has_embeddings_table = table_exists(cur, "embeddings")
 
     if has_embeddings_table:
@@ -67,6 +99,8 @@ def fetch_students(cur):
                 u.id,
                 u.full_name,
                 u.role_id,
+                u.admission_course,
+                u.major,
                 EXISTS (
                     SELECT 1
                     FROM embeddings e
@@ -82,6 +116,8 @@ def fetch_students(cur):
                 u.id,
                 u.full_name,
                 u.role_id,
+                u.admission_course,
+                u.major,
                 FALSE AS has_embedding
             FROM users u
             WHERE u.role_id = 3
@@ -102,7 +138,9 @@ def get_students():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        return jsonify(fetch_students(cur)), 200
+        students = fetch_students(cur)
+        conn.commit()
+        return jsonify(students), 200
     except Exception as e:
         return jsonify({
             "error": "Loi tai danh sach sinh vien",
@@ -204,6 +242,115 @@ def register_student_camera():
 
 
 # ============================================================
+# Course enrollment APIs used by admin / lecturer dashboards
+# ============================================================
+
+@student_bp.route("/api/courses/<int:course_id>/students", methods=["POST"])
+@role_required([1, 2])
+def add_student_to_course(course_id):
+    data = request.get_json(silent=True) or {}
+    student_id = str(data.get("student_id") or data.get("id") or "").strip()
+    full_name = str(data.get("full_name") or data.get("name") or "").strip()
+    password = str(data.get("password") or "123456").strip() or "123456"
+    admission_course = str(data.get("admission_course") or "").strip() or None
+    major = str(data.get("major") or "").strip() or None
+
+    if not student_id:
+        return jsonify({"error": "Thiếu MSSV"}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        ensure_student_profile_columns(cur)
+
+        if not user_can_manage_course(cur, course_id):
+            return jsonify({"error": "Không có quyền sửa học phần này"}), 403
+
+        cur.execute("SELECT id, role_id FROM users WHERE id = %s", (student_id,))
+        existing_user = cur.fetchone()
+
+        if existing_user and int(existing_user["role_id"]) != 3:
+            return jsonify({"error": "Mã số này không thuộc tài khoản sinh viên"}), 400
+
+        if not existing_user:
+            if not full_name:
+                return jsonify({"error": "Sinh viên chưa tồn tại, cần nhập họ tên để tạo mới"}), 400
+            cur.execute("""
+                INSERT INTO users (id, full_name, password, role_id, admission_course, major)
+                VALUES (%s, %s, %s, 3, %s, %s)
+            """, (student_id, full_name, password, admission_course, major))
+        else:
+            updates = []
+            params = []
+            if full_name:
+                updates.append("full_name = %s")
+                params.append(full_name)
+            if admission_course is not None:
+                updates.append("admission_course = %s")
+                params.append(admission_course)
+            if major is not None:
+                updates.append("major = %s")
+                params.append(major)
+            if updates:
+                params.append(student_id)
+                cur.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = %s", params)
+
+        cur.execute("""
+            SELECT 1
+            FROM course_students
+            WHERE course_id = %s AND student_id = %s
+        """, (course_id, student_id))
+        if cur.fetchone():
+            conn.commit()
+            return jsonify({"message": "Sinh viên đã có trong học phần", "already_exists": True})
+
+        cur.execute("""
+            INSERT INTO course_students (course_id, student_id)
+            VALUES (%s, %s)
+        """, (course_id, student_id))
+
+        conn.commit()
+        return jsonify({"message": "Đã thêm sinh viên vào học phần"}), 201
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": "Thêm sinh viên vào học phần thất bại", "detail": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@student_bp.route("/api/courses/<int:course_id>/students/<student_id>", methods=["DELETE"])
+@role_required([1, 2])
+def remove_student_from_course(course_id, student_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        if not user_can_manage_course(cur, course_id):
+            return jsonify({"error": "Không có quyền sửa học phần này"}), 403
+
+        cur.execute("""
+            DELETE FROM course_students
+            WHERE course_id = %s AND student_id = %s
+        """, (course_id, student_id))
+
+        conn.commit()
+        return jsonify({"message": "Đã xóa sinh viên khỏi học phần"}), 200
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({"error": "Xóa sinh viên khỏi học phần thất bại", "detail": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# ============================================================
 # New APIs for student dashboard
 # ============================================================
 
@@ -216,6 +363,8 @@ def student_profile():
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
+        ensure_student_profile_columns(cur)
+        conn.commit()
         has_embeddings_table = table_exists(cur, "embeddings")
 
         if has_embeddings_table:
@@ -224,6 +373,8 @@ def student_profile():
                     u.id,
                     u.full_name,
                     u.role_id,
+                    u.admission_course,
+                    u.major,
                     EXISTS (
                         SELECT 1
                         FROM embeddings e
@@ -238,6 +389,8 @@ def student_profile():
                     u.id,
                     u.full_name,
                     u.role_id,
+                    u.admission_course,
+                    u.major,
                     FALSE AS has_embedding
                 FROM users u
                 WHERE u.id = %s AND u.role_id = 3
@@ -277,9 +430,9 @@ def student_courses():
                 c.credits,
                 c.lecturer_id,
                 lecturer.full_name AS lecturer_name,
-                COUNT(a.*) AS total_attendance,
-                COUNT(a.*) FILTER (WHERE a.recognized = TRUE) AS present_count,
-                COUNT(a.*) FILTER (WHERE a.recognized = FALSE) AS unrecognized_count,
+                COUNT(a.id) AS total_attendance,
+                COUNT(a.id) FILTER (WHERE a.recognized = TRUE) AS present_count,
+                COUNT(a.id) FILTER (WHERE a.recognized = FALSE) AS unrecognized_count,
                 MAX(a.time) AS last_attendance_time
             FROM course_students cs
             JOIN courses c
@@ -288,8 +441,8 @@ def student_courses():
                 ON lecturer.id = c.lecturer_id
             LEFT JOIN attendance a
                 ON a.course_id = c.id
-               AND a.student_id = cs.student_id
-            WHERE cs.student_id = %s
+               AND a.student_id = CAST(cs.student_id AS VARCHAR)
+            WHERE cs.student_id = CAST(%s AS VARCHAR)
             GROUP BY
                 c.id,
                 c.name,
@@ -454,7 +607,7 @@ def student_courses_by_id(student_id):
                 ON c.id = cs.course_id
             LEFT JOIN users lecturer
                 ON lecturer.id = c.lecturer_id
-            WHERE cs.student_id = %s
+            WHERE cs.student_id = CAST(%s AS VARCHAR)
             ORDER BY c.id DESC
         """, (student_id,))
         return jsonify(cur.fetchall()), 200

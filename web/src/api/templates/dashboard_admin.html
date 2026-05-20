@@ -477,13 +477,15 @@
                     <option value="" disabled selected>Chọn học kỳ</option>
                     <option value="HK1">HK1</option>
                     <option value="HK2">HK2</option>
+                    <option value="HK Hè">HK Hè</option>
                   </select>
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">Năm học <span class="text-danger">*</span></label>
+                  <label class="form-label">Khóa học phần / Năm học <span class="text-danger">*</span></label>
                   <select class="form-select" id="courseYear" required>
-                    <option value="" disabled selected>Chọn năm</option>
+                    <option value="" disabled selected>Chọn khóa học phần</option>
                   </select>
+                  <small class="text-muted">Dạng 2 năm, ví dụ: 2025-2026</small>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Phòng học</label>
@@ -529,12 +531,32 @@
               </div>
               <div class="mb-3">
                 <label class="form-label">Vai trò <span class="text-danger">*</span></label>
-                <select class="form-select" id="userRole" required>
+                <select class="form-select" id="userRole" required onchange="toggleStudentFields()">
                   <option value="" disabled selected>Chọn vai trò</option>
                   <option value="1">Admin</option>
                   <option value="2">Giảng viên</option>
                   <option value="3">Sinh viên</option>
                 </select>
+              </div>
+              <div id="studentExtraFields" class="d-none">
+                <div class="mb-3">
+                  <label class="form-label">Khóa trúng tuyển <span class="text-muted">(4 năm)</span></label>
+                  <select class="form-select" id="studentAdmissionCourse">
+                    <option value="">Chọn khóa trúng tuyển...</option>
+                  </select>
+                  <small class="text-muted">Ví dụ: 2024-2028. Trường này khác với khóa học phần 2 năm.</small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Ngành</label>
+                  <select class="form-select" id="studentMajor">
+                    <option value="">Chọn ngành...</option>
+                    <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                    <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+                    <option value="Hệ thống thông tin">Hệ thống thông tin</option>
+                    <option value="Khoa học dữ liệu">Khoa học dữ liệu</option>
+                    <option value="An toàn thông tin">An toàn thông tin</option>
+                  </select>
+                </div>
               </div>
               <div class="mb-3">
                 <label class="form-label">Mật khẩu</label>
@@ -583,6 +605,32 @@
       </div>
     </div>
 
+    <!-- Modal: Import Giảng viên từ Excel -->
+    <div class="modal fade" id="importLecturersModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">📥 Import Giảng viên từ Excel</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-light border mb-3">
+              <strong>📋 Yêu cầu file Excel:</strong><br>
+              Cột bắt buộc: <code>lecturer_id</code> hoặc <code>id</code>, <code>full_name</code><br>
+              <small class="text-muted">Cột <code>password</code> không bắt buộc. Mật khẩu mặc định: <strong>123456</strong></small>
+            </div>
+            <form id="importLecturersForm">
+              <div class="mb-3">
+                <label class="form-label">Chọn file Excel <span class="text-danger">*</span></label>
+                <input type="file" class="form-control" id="lecturerFile" accept=".xlsx,.xls" required />
+              </div>
+              <button type="submit" class="btn btn-success w-100">📤 Tải lên</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Đăng ký khuôn mặt sinh viên (ZIP) -->
     <div class="modal fade" id="faceZipModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
@@ -615,6 +663,27 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
+            <div class="section-card mb-3">
+              <div class="section-card-body">
+                <h6 class="fw-bold mb-3">➕ Thêm sinh viên vào học phần</h6>
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <input type="text" class="form-control" id="courseStudentIdInput" placeholder="MSSV" />
+                  </div>
+                  <div class="col-md-4">
+                    <input type="text" class="form-control" id="courseStudentNameInput" placeholder="Họ tên nếu SV chưa tồn tại" />
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="courseStudentAdmissionInput">
+                      <option value="">Khóa trúng tuyển</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" type="button" onclick="addStudentToCurrentCourse()">Thêm</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="studentsInCourseList" class="list-group"></div>
           </div>
         </div>
@@ -649,11 +718,6 @@
       </a>
       <a href="#" onclick="showTab('exams')" id="nav-exams">
         <span class="nav-icon">📝</span> Ca thi
-      </a>
-
-      <div class="sidebar-section">Báo cáo</div>
-      <a href="#" onclick="showTab('attendance')" id="nav-attendance">
-        <span class="nav-icon">🕑</span> Lịch sử điểm danh
       </a>
 
       <div class="sidebar-section">Hệ thống</div>
@@ -788,7 +852,10 @@
               <span class="search-icon">🔍</span>
               <input type="text" class="form-control" id="lecturerSearch" placeholder="Tìm kiếm giảng viên..." style="width:260px" oninput="filterLecturers()" />
             </div>
-            <button class="btn btn-success" onclick="openUserModal(null, 2)">➕ Thêm giảng viên</button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importLecturersModal">📥 Import giảng viên</button>
+              <button class="btn btn-success" onclick="openUserModal(null, 2)">➕ Thêm giảng viên</button>
+            </div>
           </div>
           <div class="section-card">
             <div class="section-card-body p-0">
@@ -812,11 +879,22 @@
         <!-- ========== TAB: STUDENTS ========== -->
         <div id="tab-students" class="d-none">
           <div class="action-row">
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
               <div class="search-bar">
                 <span class="search-icon">🔍</span>
                 <input type="text" class="form-control" id="studentSearch" placeholder="Tìm kiếm sinh viên..." style="width:260px" oninput="filterStudents()" />
               </div>
+              <select class="form-select" id="studentFilterCourse" style="width:180px" onchange="filterStudents()">
+                <option value="">Tất cả khoá</option>
+              </select>
+              <select class="form-select" id="studentFilterMajor" style="width:200px" onchange="filterStudents()">
+                <option value="">Tất cả ngành</option>
+                <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
+                <option value="Hệ thống thông tin">Hệ thống thông tin</option>
+                <option value="Khoa học dữ liệu">Khoa học dữ liệu</option>
+                <option value="An toàn thông tin">An toàn thông tin</option>
+              </select>
             </div>
             <div class="d-flex gap-2">
               <button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importStudentsModal">📥 Import Excel</button>
@@ -831,16 +909,19 @@
                   <tr>
                     <th>Sinh viên</th>
                     <th>MSSV</th>
+                    <th>Khóa trúng tuyển</th>
+                    <th>Ngành</th>
                     <th>Khuôn mặt</th>
                     <th>Camera - Đăng ký</th>
                     <th style="white-space:nowrap">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="students-tbody">
-                  <tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr>
+                  <tr><td colspan="7" class="text-center text-muted py-3">Đang tải...</td></tr>
                 </tbody>
               </table>
             </div>
+            <div id="students-pagination"></div>
           </div>
         </div>
 
@@ -1058,6 +1139,7 @@
       let allStudents = [];
       let allUsers = [];
       let allAttendance = [];
+      let currentCourseStudentModal = { id: null, name: '' };
       let dashChart = null;
       let stream = null;
       let currentStudentId = null;
@@ -1096,6 +1178,32 @@
         return name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
       }
 
+      function parseCourseSemester(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(/^(HK1|HK2|HK Hè|HK He)[\s-]+(\d{4}(?:-\d{4})?)$/i);
+        if (match) {
+          return { semester: match[1].replace('HK He', 'HK Hè'), year: match[2] };
+        }
+        const parts = raw.split('-');
+        if (parts.length >= 3 && /^HK/i.test(parts[0])) {
+          return { semester: parts[0], year: `${parts[1]}-${parts[2]}` };
+        }
+        if (parts.length === 2) {
+          return { semester: parts[0], year: parts[1] };
+        }
+        return { semester: '', year: '' };
+      }
+
+      function formatCourseSemesterLabel(value) {
+        const parsed = parseCourseSemester(value);
+        if (!parsed.semester && !parsed.year) return value || '—';
+        return `${parsed.semester} · ${parsed.year}`;
+      }
+
+      function buildCourseSemesterValue() {
+        return `${qs('courseSemester').value}-${qs('courseYear').value}`;
+      }
+
       function roleBadge(roleId) {
         const map = {
           1: ['badge-admin', 'Admin'],
@@ -1130,7 +1238,6 @@
         students: '👨‍🎓 Quản lý sinh viên',
         users: '👥 Quản lý tài khoản',
         exams: '📝 Quản lý ca thi',
-        attendance: '🕑 Lịch sử điểm danh',
         backup: '💾 Sao lưu & Khôi phục dữ liệu',
       };
 
@@ -1192,7 +1299,7 @@
             tr.innerHTML = `
               <td><strong>${c.name}</strong></td>
               <td>${c.lecturer_name || '—'}</td>
-              <td><span class="schedule-tag">${c.semester}</span></td>
+              <td><span class="schedule-tag">${formatCourseSemesterLabel(c.semester)}</span></td>
               <td>${c.room || '—'}</td>
             `;
             tbody.appendChild(tr);
@@ -1276,7 +1383,7 @@
               <div class="course-name">${c.name}</div>
               <div class="course-meta mb-2">
                 <span>👨‍🏫 ${c.lecturer_name || 'Chưa rõ'}</span>
-                <span class="schedule-tag">${c.semester}</span>
+                <span class="schedule-tag">${formatCourseSemesterLabel(c.semester)}</span>
               </div>
               <div class="course-meta mb-3">
                 ${c.room ? `<span>🏫 ${c.room}</span>` : ''}
@@ -1401,9 +1508,9 @@
         qs('courseCredits').value = course?.credits || '';
 
         if (course?.semester) {
-          const [sem, year] = course.semester.split('-');
-          qs('courseSemester').value = sem || '';
-          qs('courseYear').value = year || '';
+          const parsed = parseCourseSemester(course.semester);
+          qs('courseSemester').value = parsed.semester || '';
+          qs('courseYear').value = parsed.year || '';
         } else {
           qs('courseSemester').value = '';
           qs('courseYear').value = '';
@@ -1419,7 +1526,7 @@
         const id = qs('courseId').value;
         const payload = {
           name: qs('courseName').value,
-          semester: `${qs('courseSemester').value}-${qs('courseYear').value}`,
+          semester: buildCourseSemesterValue(),
           lecturer_id: qs('courseLecturer').value,
           room: qs('courseRoom').value,
           period: qs('coursePeriod').value,
@@ -1451,28 +1558,83 @@
       }
 
       async function viewStudentsInCourse(courseId, courseName) {
+        currentCourseStudentModal = { id: courseId, name: courseName };
         qs('studentsInCourseTitle').textContent = `👨‍🎓 Sinh viên - ${courseName}`;
+        populateAdmissionCourseSelect('courseStudentAdmissionInput');
+        qs('courseStudentIdInput').value = '';
+        qs('courseStudentNameInput').value = '';
         const list = qs('studentsInCourseList');
         list.innerHTML = '<div class="p-3 text-muted">Đang tải...</div>';
         new bootstrap.Modal(qs('studentsInCourseModal')).show();
         try {
           const data = await fetch(`/api/courses/${courseId}/students`).then(r => r.json());
-          list.innerHTML = '';
-          if (!data.length) {
-            list.innerHTML = '<div class="p-3 text-muted text-center">Chưa có sinh viên</div>';
-            return;
-          }
-          data.forEach(st => {
-            const div = document.createElement('div');
-            div.className = 'list-group-item d-flex align-items-center gap-3';
-            div.innerHTML = `
-              <div class="avatar-circle">${getInitials(st.full_name)}</div>
-              <div><strong>${st.id}</strong> — ${st.full_name}</div>
-            `;
-            list.appendChild(div);
-          });
+          renderStudentsInCourse(data);
         } catch (e) {
           list.innerHTML = '<div class="p-3 text-danger">Lỗi tải dữ liệu</div>';
+        }
+      }
+
+      function renderStudentsInCourse(data) {
+        const list = qs('studentsInCourseList');
+        list.innerHTML = '';
+        if (!Array.isArray(data) || !data.length) {
+          list.innerHTML = '<div class="p-3 text-muted text-center">Chưa có sinh viên</div>';
+          return;
+        }
+        data.forEach(st => {
+          const div = document.createElement('div');
+          div.className = 'list-group-item d-flex align-items-center justify-content-between gap-3';
+          div.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+              <div class="avatar-circle">${getInitials(st.full_name)}</div>
+              <div>
+                <strong>${st.id}</strong> — ${st.full_name}
+                <div class="small text-muted">${st.admission_course || 'Chưa có khóa trúng tuyển'}${st.major ? ' · ' + st.major : ''}</div>
+              </div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="removeStudentFromCurrentCourse('${st.id}')">🗑️ Xóa khỏi học phần</button>
+          `;
+          list.appendChild(div);
+        });
+      }
+
+      async function addStudentToCurrentCourse() {
+        const courseId = currentCourseStudentModal.id;
+        if (!courseId) return showToast('❌ Chưa chọn học phần', 'danger');
+        const payload = {
+          student_id: qs('courseStudentIdInput').value.trim(),
+          full_name: qs('courseStudentNameInput').value.trim(),
+          admission_course: qs('courseStudentAdmissionInput').value,
+        };
+        if (!payload.student_id) return showToast('❌ Vui lòng nhập MSSV', 'danger');
+
+        try {
+          const res = await fetch(`/api/courses/${courseId}/students`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) return showToast(`❌ ${data.error || data.detail || 'Không thể thêm sinh viên'}`, 'danger');
+          showToast(`✅ ${data.message || 'Đã thêm sinh viên vào học phần'}`, 'success');
+          viewStudentsInCourse(courseId, currentCourseStudentModal.name);
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      }
+
+      async function removeStudentFromCurrentCourse(studentId) {
+        const courseId = currentCourseStudentModal.id;
+        if (!courseId || !studentId) return;
+        if (!confirm(`Xóa sinh viên ${studentId} khỏi học phần này?`)) return;
+        try {
+          const res = await fetch(`/api/courses/${courseId}/students/${studentId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (!res.ok || data.error) return showToast(`❌ ${data.error || data.detail || 'Không thể xóa sinh viên'}`, 'danger');
+          showToast('✅ Đã xóa sinh viên khỏi học phần', 'success');
+          viewStudentsInCourse(courseId, currentCourseStudentModal.name);
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
         }
       }
 
@@ -1480,85 +1642,18 @@
          LECTURERS
       ======================================== */
       async function loadLecturers() {
-        fetch("/api/lecturers")
-
-          .then((res) => {
-
-            console.log("STATUS:", res.status);
-
-            if (!res.ok) {
-              throw new Error("HTTP " + res.status);
-            }
-
-            return res.json();
-          })
-
-          .then((data) => {
-
-            console.log("LECTURERS:", data);
-            allLecturers = data; // <-- THÊM DÒNG NÀY
-            const tbody = document.getElementById("lecturers-tbody");
-            tbody.innerHTML = "";
-
-            if (!Array.isArray(data)) {
-              console.error("DATA KHÔNG PHẢI ARRAY");
-              return;
-            }
-
-            if (data.length === 0) {
-
-              tbody.innerHTML = `
-                <tr>
-                  <td colspan="4" class="text-center text-muted py-3">
-                    Không có giảng viên
-                  </td>
-                </tr>
-              `;
-
-              return;
-            }
-
-            data.forEach((lecturer) => {
-
-              const tr = document.createElement("tr");
-
-              tr.innerHTML = `
-                <td>${lecturer.full_name || ""}</td>
-
-                <td>
-                  <strong>${lecturer.user_id || ""}</strong>
-                </td>
-
-                <td>
-                  ${lecturer.total_courses || 0}
-                </td>
-
-                <td>
-                  <button class="btn btn-sm btn-warning"
-                    onclick='openUserModal(${JSON.stringify(lecturer)})'>
-                    ✏️ Sửa
-                  </button>
-
-                  <button class="btn btn-sm btn-danger ms-1"
-                    onclick="deleteUser('${lecturer.id}')">
-                    🗑️ Xóa
-                  </button>
-                </td>
-              `;
-
-              tbody.appendChild(tr);
-            });
-          })
-
-          .catch((err) => {
-
-            console.error("Lỗi tải giảng viên:", err);
-
-            showToast(
-              "❌ Lỗi tải danh sách giảng viên",
-              "danger"
-            );
-          });
+        try {
+          const res = await fetch('/api/lecturers');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          allLecturers = Array.isArray(data) ? data : [];
+          renderLecturers(allLecturers);
+          populateLecturerFilter();
+          populateCourseLecturerSelect();
+        } catch (err) {
+          console.error('Lỗi tải giảng viên:', err);
+          showToast('❌ Lỗi tải danh sách giảng viên', 'danger');
+        }
       }
 
       function renderLecturers(list) {
@@ -1614,6 +1709,7 @@
           const data = await res.json();
 
           allStudents = data;
+          populateStudentFilterCourse();
           renderStudents(allStudents);
 
         } catch (e) {
@@ -1621,24 +1717,46 @@
         }
       }
 
+      // ── Pagination state ─────────────────────────────────────────────
+      const STUDENTS_PAGE_SIZE = 50;
+      let studentCurrentPage = 1;
+      let studentFilteredList = [];
+      let studentFilterTimer = null;
+
       function renderStudents(list) {
+        studentFilteredList = Array.isArray(list) ? list : [];
+        studentCurrentPage = 1;
+        renderStudentsPage();
+      }
+
+      function renderStudentsPage() {
         const tbody = qs("students-tbody");
         tbody.innerHTML = "";
 
-        if (!Array.isArray(list) || list.length === 0) {
+        const total = studentFilteredList.length;
+        const totalPages = Math.max(1, Math.ceil(total / STUDENTS_PAGE_SIZE));
+        studentCurrentPage = Math.min(studentCurrentPage, totalPages);
+
+        if (total === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="5" class="text-center text-muted py-4">
+              <td colspan="7" class="text-center text-muted py-4">
                 Không có sinh viên
               </td>
             </tr>
           `;
+          renderStudentsPagination(0, 1, 1);
           return;
         }
 
-        list.forEach(st => {
-          const tr = document.createElement("tr");
+        const start = (studentCurrentPage - 1) * STUDENTS_PAGE_SIZE;
+        const pageItems = studentFilteredList.slice(start, start + STUDENTS_PAGE_SIZE);
 
+        const frag = document.createDocumentFragment();
+        pageItems.forEach(st => {
+          const tr = document.createElement("tr");
+          const safeId = (st.id || "").replace(/'/g, "\'");
+          const safeName = (st.full_name || "").replace(/'/g, "\'");
           tr.innerHTML = `
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -1649,9 +1767,9 @@
                 <strong>${st.full_name || ""}</strong>
               </div>
             </td>
-
             <td><code class="student-id">${st.id || ""}</code></td>
-
+            <td><span class="schedule-tag">${st.admission_course || "—"}</span></td>
+            <td>${st.major || "—"}</td>
             <td>
               <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold small shadow-sm ${
                 st.has_embedding ? "bg-success text-white" : "bg-danger text-white"
@@ -1659,48 +1777,109 @@
                 ${st.has_embedding ? "🛡️ Đã xác thực" : "⚠️ Chưa xác thực"}
               </span>
             </td>
-
             <td>
               <button
-                class="btn btn-sm w-60 ${
-                  st.has_embedding ? "btn-outline-warning" : "btn-outline-primary"
-                }"
-                onclick="handleRegisterFace('${st.id}', '${st.full_name}')"
+                class="btn btn-sm ${st.has_embedding ? "btn-outline-warning" : "btn-outline-primary"}"
+                onclick="handleRegisterFace('${safeId}', '${safeName}')"
               >
-                ${
-                  st.has_embedding
-                    ? "🔄 Cập nhật khuôn mặt"
-                    : "📸 Đăng ký khuôn mặt"
-                }
+                ${st.has_embedding ? "🔄 Cập nhật khuôn mặt" : "📸 Đăng ký khuôn mặt"}
               </button>
             </td>
-
             <td>
               <button class="btn btn-outline-warning btn-sm me-1"
-                onclick='openUserModal(${JSON.stringify(st)})'>
-                ✏️
-              </button>
-
+                onclick='openUserModal(${JSON.stringify(st)})'>✏️</button>
               <button class="btn btn-outline-danger btn-sm"
-                onclick="deleteUser('${st.id}')">
-                🗑️
-              </button>
+                onclick="deleteUser('${safeId}')">🗑️</button>
             </td>
           `;
-
-          tbody.appendChild(tr);
+          frag.appendChild(tr);
         });
+        tbody.appendChild(frag);
+        renderStudentsPagination(total, studentCurrentPage, totalPages);
+      }
+
+      function renderStudentsPagination(total, currentPage, totalPages) {
+        const container = qs("students-pagination");
+        if (!container) return;
+        if (total === 0) { container.innerHTML = ""; return; }
+
+        const start = (currentPage - 1) * STUDENTS_PAGE_SIZE + 1;
+        const end = Math.min(currentPage * STUDENTS_PAGE_SIZE, total);
+
+        let pages = [];
+        if (totalPages <= 7) {
+          for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+          pages = [1];
+          let lo = Math.max(2, currentPage - 2);
+          let hi = Math.min(totalPages - 1, currentPage + 2);
+          if (lo > 2) pages.push("...");
+          for (let i = lo; i <= hi; i++) pages.push(i);
+          if (hi < totalPages - 1) pages.push("...");
+          pages.push(totalPages);
+        }
+
+        container.innerHTML = `
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 border-top bg-light rounded-bottom">
+            <small class="text-muted">
+              Hiển thị <strong>${start}–${end}</strong> / <strong>${total}</strong> sinh viên
+            </small>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <button class="btn btn-outline-secondary btn-sm" ${currentPage === 1 ? "disabled" : ""}
+                onclick="goStudentPage(${currentPage - 1})">‹ Trước</button>
+              ${pages.map(p =>
+                p === "..."
+                  ? `<span class="px-1 text-muted">…</span>`
+                  : `<button class="btn btn-sm ${p === currentPage ? "btn-primary" : "btn-outline-secondary"}"
+                       onclick="goStudentPage(${p})">${p}</button>`
+              ).join("")}
+              <button class="btn btn-outline-secondary btn-sm" ${currentPage === totalPages ? "disabled" : ""}
+                onclick="goStudentPage(${currentPage + 1})">Sau ›</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function goStudentPage(page) {
+        studentCurrentPage = page;
+        renderStudentsPage();
+        qs("tab-students").scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
       function filterStudents() {
-        const keyword = qs("studentSearch").value.toLowerCase();
+        clearTimeout(studentFilterTimer);
+        studentFilterTimer = setTimeout(() => {
+          const keyword = qs("studentSearch").value.toLowerCase().trim();
+          const filterCourse = qs("studentFilterCourse").value;
+          const filterMajor = qs("studentFilterMajor").value;
 
-        const filtered = allStudents.filter(s =>
-          s.full_name.toLowerCase().includes(keyword) ||
-          s.id.toLowerCase().includes(keyword)
-        );
+          const filtered = allStudents.filter(s => {
+            const matchKeyword = !keyword ||
+              (s.full_name || '').toLowerCase().includes(keyword) ||
+              (s.id || '').toLowerCase().includes(keyword) ||
+              (s.admission_course || '').toLowerCase().includes(keyword) ||
+              (s.major || '').toLowerCase().includes(keyword);
+            const matchCourse = !filterCourse || (s.admission_course || '') === filterCourse;
+            const matchMajor = !filterMajor || (s.major || '') === filterMajor;
+            return matchKeyword && matchCourse && matchMajor;
+          });
 
-        renderStudents(filtered);
+          renderStudents(filtered);
+        }, 200);
+      }
+      function populateStudentFilterCourse() {
+        const sel = qs("studentFilterCourse");
+        if (!sel) return;
+        const currentValue = sel.value;
+        sel.innerHTML = '<option value="">Tất cả khoá</option>';
+        const cur = new Date().getFullYear();
+        for (let y = 2018; y <= cur + 1; y++) {
+          const opt = document.createElement('option');
+          opt.value = `${y}-${y + 4}`;
+          opt.textContent = `${y}-${y + 4}`;
+          sel.appendChild(opt);
+        }
+        if (currentValue) sel.value = currentValue;
       }
            
       async function handleRegisterFace(studentId, fullName) {
@@ -1796,7 +1975,11 @@
         qs('userIdInput').disabled = !!user;
         qs('userFullName').value = user?.full_name || '';
         qs('userRole').value = user?.role_id || defaultRole || '';
+        populateAdmissionCourseSelect('studentAdmissionCourse');
+        qs('studentAdmissionCourse').value = user?.admission_course || '';
+        qs('studentMajor').value = user?.major || '';
         qs('userPassword').value = '';
+        toggleStudentFields();
         modal.show();
       }
 
@@ -1808,6 +1991,8 @@
           full_name: qs('userFullName').value,
           role_id: parseInt(qs('userRole').value),
           password: qs('userPassword').value || '123456',
+          admission_course: qs('studentAdmissionCourse')?.value || null,
+          major: qs('studentMajor')?.value || null,
         };
         try {
           const res = await fetch(existingId ? `/api/admin/users/${existingId}` : '/api/admin/users', {
@@ -1841,6 +2026,30 @@
       }
 
       /* ========================================
+         IMPORT LECTURERS
+      ======================================== */
+      qs('importLecturersForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = qs('lecturerFile').files[0];
+        if (!file) return showToast('❌ Vui lòng chọn file Excel', 'danger');
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const res = await fetch('/api/admin/lecturers/import', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (!res.ok || data.error) return showToast(`❌ ${data.error || data.detail || 'Import thất bại'}`, 'danger');
+          showToast(`✅ Import ${data.count || 0} giảng viên thành công`, 'success');
+          bootstrap.Modal.getInstance(qs('importLecturersModal'))?.hide();
+          qs('importLecturersForm').reset();
+          loadLecturers();
+          loadUsers();
+          loadDashboard();
+        } catch (e) {
+          showToast('❌ Lỗi kết nối', 'danger');
+        }
+      });
+
+      /* ========================================
          IMPORT STUDENTS
       ======================================== */
       function populateImportCourseSelect() {
@@ -1849,7 +2058,7 @@
         allCourses.forEach(c => {
           const opt = document.createElement('option');
           opt.value = c.id;
-          opt.textContent = `${c.name} (${c.semester})`;
+          opt.textContent = `${c.name} (${formatCourseSemesterLabel(c.semester)})`;
           sel.appendChild(opt);
         });
       }
@@ -1912,7 +2121,7 @@
         allCourses.forEach(c => {
           const opt = document.createElement('option');
           opt.value = c.id;
-          opt.textContent = `${c.name} (${c.semester})`;
+          opt.textContent = `${c.name} (${formatCourseSemesterLabel(c.semester)})`;
           sel.appendChild(opt);
         });
         if (cur) sel.value = cur;
@@ -2001,13 +2210,38 @@
       ======================================== */
       function populateYears() {
         const sel = qs('courseYear');
-        sel.innerHTML = '<option value="" disabled selected>Chọn năm</option>';
+        if (!sel) return;
+        const currentValue = sel.value;
+        sel.innerHTML = '<option value="" disabled selected>Chọn khóa học phần</option>';
         const cur = new Date().getFullYear();
-        for (let y = 2020; y <= cur + 1; y++) {
+        for (let y = 2020; y <= cur + 2; y++) {
           const opt = document.createElement('option');
-          opt.value = y; opt.textContent = y;
+          opt.value = `${y}-${y + 1}`;
+          opt.textContent = `${y}-${y + 1}`;
           sel.appendChild(opt);
         }
+        if (currentValue) sel.value = currentValue;
+      }
+
+      function populateAdmissionCourseSelect(selectId) {
+        const sel = qs(selectId);
+        if (!sel) return;
+        const currentValue = sel.value;
+        const firstLabel = selectId === 'courseStudentAdmissionInput' ? 'Khóa trúng tuyển' : 'Chọn khóa trúng tuyển...';
+        sel.innerHTML = `<option value="">${firstLabel}</option>`;
+        const cur = new Date().getFullYear();
+        for (let y = 2018; y <= cur + 1; y++) {
+          const opt = document.createElement('option');
+          opt.value = `${y}-${y + 4}`;
+          opt.textContent = `${y}-${y + 4}`;
+          sel.appendChild(opt);
+        }
+        if (currentValue) sel.value = currentValue;
+      }
+
+      function toggleStudentFields() {
+        const isStudent = String(qs('userRole')?.value || '') === '3';
+        qs('studentExtraFields')?.classList.toggle('d-none', !isStudent);
       }
       /* ========================================
          EXAM
@@ -2045,7 +2279,7 @@
         allCourses.forEach(c => {
           const opt = document.createElement("option");
           opt.value = c.id;
-          opt.textContent = `${c.name} (${c.semester || "—"})`;
+          opt.textContent = `${c.name} (${formatCourseSemesterLabel(c.semester)})`;
           courseSel.appendChild(opt);
         });
 
@@ -2486,10 +2720,9 @@
          INIT
       ======================================== */
       document.addEventListener('DOMContentLoaded', async () => {
-        try {
-
-          await loadLecturers();
+        try {  
           await loadCourses();
+          await loadLecturers();
           await loadDashboard();
           await loadUsers();
           qs("restoreBackupForm")?.addEventListener("submit", restoreBackup);
@@ -2510,6 +2743,14 @@
           stream.getTracks().forEach(track => track.stop());
           stream = null;
         }
+      });
+
+      // Fix: dọn backdrop khi đóng modal Xem sinh viên trong học phần
+      qs("studentsInCourseModal").addEventListener("hidden.bs.modal", () => {
+        document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+        document.body.classList.remove("modal-open");
+        document.body.style.overflow = "";
+        document.body.style.paddingRight = "";
       });
     </script>
   </body>

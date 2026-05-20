@@ -61,6 +61,7 @@
     <a href="#" onclick="showTab('dashboard')" id="nav-dashboard" class="active"><span>📊</span> Tổng quan</a>
     <a href="#" onclick="showTab('courses')" id="nav-courses"><span>📚</span> Học phần của tôi</a>
     <a href="#" onclick="showTab('attendance')" id="nav-attendance"><span>🕑</span> Lịch sử điểm danh</a>
+    <a href="#" onclick="showTab('exams')" id="nav-exams"><span>📝</span> Ca thi của tôi</a>
     <a href="#" onclick="showTab('profile')" id="nav-profile"><span>👤</span> Thông tin cá nhân</a>
 
     <div class="sidebar-footer">
@@ -81,6 +82,7 @@
       <div id="tab-dashboard">
         <div class="row g-3 mb-4">
           <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background:#e7f1ff;">📚</div><div><div class="stat-value text-primary" id="stat-courses">—</div><div class="stat-label">Học phần</div></div></div></div>
+          <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background:#eef2ff;">📝</div><div><div class="stat-value text-primary" id="stat-exams">—</div><div class="stat-label">Ca thi</div></div></div></div>
           <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background:#d1e7dd;">✅</div><div><div class="stat-value text-success" id="stat-present">—</div><div class="stat-label">Đã điểm danh</div></div></div></div>
           <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background:#fff3cd;">🕑</div><div><div class="stat-value text-warning" id="stat-total-attendance">—</div><div class="stat-label">Tổng lượt ghi nhận</div></div></div></div>
           <div class="col-6 col-xl-3"><div class="stat-card"><div class="stat-icon" style="background:#f8d7da;">📅</div><div><div class="stat-value text-danger" id="stat-latest">—</div><div class="stat-label">Lần gần nhất</div></div></div></div>
@@ -136,6 +138,28 @@
         </div>
       </div>
 
+
+<div id="tab-exams" class="d-none">
+  <div class="action-row">
+    <div>
+      <h6 class="mb-1 fw-bold">📝 Ca thi của tôi</h6>
+      <div class="text-muted small">Các ca thi thuộc những học phần bạn đang học.</div>
+    </div>
+    <button class="btn btn-outline-primary" onclick="loadStudentExams()">🔄 Tải lại</button>
+  </div>
+
+  <div class="row g-3 mb-3" id="exam-cards">
+    <div class="col-12">
+      <div class="empty-state">
+        <div class="empty-icon">⏳</div>
+        <p>Đang tải ca thi...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="exam-detail"></div>
+</div>
+
       <div id="tab-profile" class="d-none">
         <div class="row g-3">
           <div class="col-lg-5">
@@ -149,6 +173,8 @@
                 <table class="table table-borderless mb-0">
                   <tr><td class="text-muted">Họ tên</td><td class="fw-semibold text-end">{{ user.full_name }}</td></tr>
                   <tr><td class="text-muted">Mã số</td><td class="fw-semibold text-end"><code>{{ user.user_id }}</code></td></tr>
+                  <tr><td class="text-muted">Khóa trúng tuyển</td><td class="fw-semibold text-end" id="profile-admission-course">—</td></tr>
+                  <tr><td class="text-muted">Ngành</td><td class="fw-semibold text-end" id="profile-major">—</td></tr>
                   <tr><td class="text-muted">Vai trò</td><td class="text-end"><span class="badge bg-success">Sinh viên</span></td></tr>
                 </table>
               </div>
@@ -176,6 +202,7 @@
     const studentName = "{{ user.full_name }}";
     let studentCourses = [];
     let studentAttendance = [];
+    let studentExamSessions = [];
     let attendanceChart = null;
 
     function qs(id){return document.getElementById(id);}
@@ -192,7 +219,13 @@
     function safeText(value){return String(value??"—").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");}
     function getInitials(name){if(!name)return"?";return name.split(" ").map(w=>w[0]).slice(-2).join("").toUpperCase();}
 
-    const tabTitles={dashboard:"📊 Tổng quan sinh viên",courses:"📚 Học phần của tôi",attendance:"🕑 Lịch sử điểm danh",profile:"👤 Thông tin cá nhân"};
+    const tabTitles={
+      dashboard:"📊 Tổng quan sinh viên",
+      courses:"📚 Học phần của tôi",
+      attendance:"🕑 Lịch sử điểm danh",
+      exams:"📝 Ca thi của tôi",
+      profile:"👤 Thông tin cá nhân"
+    };
     function showTab(name){
       document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add("d-none"));
       document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("active"));
@@ -201,6 +234,7 @@
       qs("page-title").textContent=tabTitles[name]||"";
       if(name==="courses")loadStudentCourses();
       if(name==="attendance")loadStudentAttendance();
+      if(name==="exams")loadStudentExams();
     }
 
     async function fetchJson(url){
@@ -239,6 +273,27 @@
         image_base64:a.image_base64??a.image??null
       }));
     }
+
+
+function normalizeExams(data){
+  const list=Array.isArray(data)?data:(data.exams||data.exam_sessions||data.data||[]);
+  return list.map(e=>({
+    id:e.id??e.exam_session_id,
+    name:e.name??e.exam_name??"Ca thi",
+    course_id:e.course_id,
+    course_name:e.course_name??"—",
+    lecturer_name:e.lecturer_name??"—",
+    exam_date:e.exam_date,
+    start_time:e.start_time,
+    end_time:e.end_time,
+    room:e.room??"—",
+    note:e.note??"",
+    status:e.status??"upcoming",
+    attendance_time:e.attendance_time??e.time??null,
+    recognized:Boolean(e.recognized),
+    similarity:e.similarity??null
+  }));
+}
 
     async function loadStudentCourses(){
       try{
@@ -286,6 +341,201 @@
       }
     }
 
+
+async function loadStudentExams(){
+  try{
+    const data=await fetchFirstAvailable([
+      "/api/student/exam-sessions",
+      `/api/students/${encodeURIComponent(studentId)}/exam-sessions`,
+      "/api/me/exam-sessions"
+    ]);
+
+    studentExamSessions=normalizeExams(data);
+    renderExams(studentExamSessions);
+    updateStats();
+
+  }catch(err){
+    console.error(err);
+    qs("exam-cards").innerHTML=`<div class="col-12"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Không tải được ca thi. Kiểm tra API <code>/api/student/exam-sessions</code>.</p></div></div>`;
+    showToast("❌ Không tải được danh sách ca thi","danger");
+  }
+}
+
+
+function formatExamDate(dateValue){
+  if(!dateValue)return"—";
+  const d=new Date(dateValue);
+  if(isNaN(d.getTime()))return safeText(dateValue);
+  return d.toLocaleDateString("vi-VN");
+}
+
+function formatExamTime(timeValue){
+  if(!timeValue)return"—";
+  return String(timeValue).slice(0,5);
+}
+
+function examStatusBadge(status){
+  const map={
+    upcoming:["bg-primary","Sắp diễn ra"],
+    ongoing:["bg-success","Đang diễn ra"],
+    finished:["bg-secondary","Đã kết thúc"]
+  };
+  const item=map[status]||["bg-light text-dark",status||"—"];
+  return `<span class="badge ${item[0]}">${item[1]}</span>`;
+}
+
+function renderExams(list){
+  const container=qs("exam-cards");
+  const detail=qs("exam-detail");
+  container.innerHTML="";
+  if(detail)detail.innerHTML="";
+
+  if(!list.length){
+    container.innerHTML=`<div class="col-12"><div class="empty-state"><div class="empty-icon">📝</div><p>Chưa có ca thi nào</p></div></div>`;
+    return;
+  }
+
+  list.forEach(exam=>{
+    const col=document.createElement("div");
+    col.className="col-md-6 col-xl-4";
+
+    const attended=exam.recognized||Boolean(exam.attendance_time);
+    const attendanceBadge=attended
+      ? `<span class="badge bg-success">✅ Đã điểm danh</span>`
+      : `<span class="badge bg-secondary">Chưa điểm danh</span>`;
+
+    col.innerHTML=`<div class="course-card">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+        <div>
+          <div class="course-name">${safeText(exam.name)}</div>
+          <div class="course-meta">${safeText(exam.course_name)}</div>
+        </div>
+        ${examStatusBadge(exam.status)}
+      </div>
+
+      <div class="course-meta mb-2"><span>👨‍🏫 ${safeText(exam.lecturer_name)}</span></div>
+      <div class="course-meta mb-2"><span>📅 ${formatExamDate(exam.exam_date)}</span> <span>⏰ ${formatExamTime(exam.start_time)} - ${formatExamTime(exam.end_time)}</span></div>
+      <div class="course-meta mb-2"><span>🏫 ${safeText(exam.room)}</span></div>
+      <div class="mb-3">${attendanceBadge}</div>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-primary btn-sm" onclick="viewExamDetail('${safeText(exam.id)}')">🔎 Chi tiết</button>
+        <button class="btn btn-outline-success btn-sm" onclick="viewExamAttendance('${safeText(exam.id)}')">🕑 Điểm danh</button>
+      </div>
+    </div>`;
+
+    container.appendChild(col);
+  });
+}
+
+function findExamById(examId){
+  return studentExamSessions.find(e=>String(e.id)===String(examId));
+}
+
+async function viewExamDetail(examId){
+  const exam=findExamById(examId);
+  const detail=qs("exam-detail");
+
+  if(!exam){
+    detail.innerHTML=`<div class="alert alert-danger">Không tìm thấy ca thi</div>`;
+    return;
+  }
+
+  const attended=exam.recognized||Boolean(exam.attendance_time);
+
+  detail.innerHTML=`<div class="section-card">
+    <div class="section-card-header"><h6>🔎 Chi tiết ca thi</h6></div>
+    <div class="section-card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <table class="table table-borderless mb-0">
+            <tr><td class="text-muted">Tên ca thi</td><td class="fw-semibold text-end">${safeText(exam.name)}</td></tr>
+            <tr><td class="text-muted">Học phần</td><td class="fw-semibold text-end">${safeText(exam.course_name)}</td></tr>
+            <tr><td class="text-muted">Giảng viên</td><td class="fw-semibold text-end">${safeText(exam.lecturer_name)}</td></tr>
+            <tr><td class="text-muted">Phòng thi</td><td class="fw-semibold text-end">${safeText(exam.room)}</td></tr>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-borderless mb-0">
+            <tr><td class="text-muted">Ngày thi</td><td class="fw-semibold text-end">${formatExamDate(exam.exam_date)}</td></tr>
+            <tr><td class="text-muted">Thời gian</td><td class="fw-semibold text-end">${formatExamTime(exam.start_time)} - ${formatExamTime(exam.end_time)}</td></tr>
+            <tr><td class="text-muted">Trạng thái ca thi</td><td class="text-end">${examStatusBadge(exam.status)}</td></tr>
+            <tr><td class="text-muted">Điểm danh</td><td class="text-end">${attended?'<span class="badge bg-success">Đã điểm danh</span>':'<span class="badge bg-secondary">Chưa điểm danh</span>'}</td></tr>
+          </table>
+        </div>
+        ${exam.note?`<div class="col-12"><div class="alert alert-light border mb-0"><strong>Ghi chú:</strong> ${safeText(exam.note)}</div></div>`:""}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function viewExamAttendance(examId){
+  const detail=qs("exam-detail");
+  const exam=findExamById(examId);
+
+  detail.innerHTML=`<div class="alert alert-info">⏳ Đang tải trạng thái điểm danh ca thi...</div>`;
+
+  try{
+    const data=await fetchFirstAvailable([
+      `/api/student/exam-sessions/${encodeURIComponent(examId)}/attendance`,
+      `/api/students/${encodeURIComponent(studentId)}/exam-sessions/${encodeURIComponent(examId)}/attendance`
+    ]);
+
+    const record=Array.isArray(data)?data[0]:(data.attendance||data.record||data);
+
+    if(!record||!record.time){
+      detail.innerHTML=`<div class="section-card">
+        <div class="section-card-header"><h6>🕑 Điểm danh ca thi${exam?` - ${safeText(exam.name)}`:""}</h6></div>
+        <div class="section-card-body">
+          <div class="alert alert-warning mb-0">Bạn chưa được ghi nhận điểm danh trong ca thi này.</div>
+        </div>
+      </div>`;
+      return;
+    }
+
+    const time=new Date(record.time).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh"});
+
+    detail.innerHTML=`<div class="section-card">
+      <div class="section-card-header"><h6>🕑 Điểm danh ca thi${exam?` - ${safeText(exam.name)}`:""}</h6></div>
+      <div class="section-card-body">
+        <div class="d-flex align-items-center gap-3">
+          ${record.image_base64?`<img src="data:image/jpeg;base64,${record.image_base64}" width="82" height="82" class="rounded-4" style="object-fit:cover;border:1px solid #dee2e6" />`:`<div class="avatar-circle">📝</div>`}
+          <div>
+            <div class="mb-2"><span class="badge bg-success">✅ Đã điểm danh ca thi</span></div>
+            <div><strong>Thời gian:</strong> ${safeText(time)}</div>
+            <div><strong>Similarity:</strong> ${record.similarity??"—"}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  }catch(err){
+    console.error(err);
+    detail.innerHTML=`<div class="alert alert-danger">❌ Không tải được điểm danh ca thi</div>`;
+  }
+}
+
+    function parseCourseSemester(value) {
+      const raw = String(value || '').trim();
+      const match = raw.match(/^(HK1|HK2|HK Hè|HK He)[\s-]+(\d{4}(?:-\d{4})?)$/i);
+      if (match) {
+        return { semester: match[1].replace('HK He', 'HK Hè'), year: match[2] };
+      }
+      const parts = raw.split('-');
+      if (parts.length >= 3 && /^HK/i.test(parts[0])) {
+        return { semester: parts[0], year: `${parts[1]}-${parts[2]}` };
+      }
+      if (parts.length === 2) {
+        return { semester: parts[0], year: parts[1] };
+      }
+      return { semester: '', year: '' };
+    }
+    function formatCourseSemesterLabel(value) {
+      const parsed = parseCourseSemester(value);
+      if (!parsed.semester && !parsed.year) return value || '—';
+      return `${parsed.semester} · ${parsed.year}`;
+    }
+
     function renderCourses(list){
       const container=qs("course-cards");container.innerHTML="";
       if(!list.length){container.innerHTML=`<div class="col-12"><div class="empty-state"><div class="empty-icon">📚</div><p>Chưa có học phần nào</p></div></div>`;return;}
@@ -293,9 +543,12 @@
         const col=document.createElement("div");col.className="col-md-6 col-lg-4";
         col.innerHTML=`<div class="course-card">
           <div class="course-name">${safeText(c.name)}</div>
-          <div class="course-meta mb-2"><span>👨‍🏫 ${safeText(c.lecturer_name)}</span> <span class="schedule-tag">${safeText(c.semester)}</span></div>
+          <div class="course-meta mb-2"><span>👨‍🏫 ${safeText(c.lecturer_name)}</span> <span class="schedule-tag">${formatCourseSemesterLabel(c.semester)}</span></div>
           <div class="course-meta mb-3"><span>🏫 ${safeText(c.room)}</span> <span>🕐 ${safeText(c.period)}</span> ${c.credits?`<span>💠 ${safeText(c.credits)} TC</span>`:""}</div>
-          <button class="btn btn-outline-primary btn-sm" onclick="showAttendanceForCourse('${safeText(c.id)}')">🕑 Xem điểm danh</button>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-outline-primary btn-sm" onclick="showAttendanceForCourse('${safeText(c.id)}')">🕑 Xem điểm danh</button>
+            <button class="btn btn-outline-success btn-sm" onclick="showExamsForCourse('${safeText(c.id)}')">📝 Xem ca thi</button>
+          </div>
         </div>`;
         container.appendChild(col);
       });
@@ -305,14 +558,14 @@
       if(!list.length){tbody.innerHTML=`<tr><td colspan="4" class="text-center text-muted py-3">Chưa có học phần</td></tr>`;return;}
       list.slice(0,6).forEach(c=>{
         const tr=document.createElement("tr");
-        tr.innerHTML=`<td><strong>${safeText(c.name)}</strong></td><td>${safeText(c.lecturer_name)}</td><td><span class="schedule-tag">${safeText(c.semester)}</span></td><td>${safeText(c.room)}</td>`;
+        tr.innerHTML=`<td><strong>${safeText(c.name)}</strong></td><td>${safeText(c.lecturer_name)}</td><td><span class="schedule-tag">${formatCourseSemesterLabel(c.semester)}</span></td><td>${safeText(c.room)}</td>`;
         tbody.appendChild(tr);
       });
     }
     function populateCourseFilter(list){
       const sel=qs("attendanceCourseFilter");if(!sel)return;
       const cur=sel.value;sel.innerHTML=`<option value="">Tất cả học phần</option>`;
-      list.forEach(c=>{const opt=document.createElement("option");opt.value=c.id;opt.textContent=`${c.name} (${c.semester})`;sel.appendChild(opt);});
+      list.forEach(c=>{const opt=document.createElement("option");opt.value=c.id;opt.textContent=`${c.name} (${formatCourseSemesterLabel(c.semester)})`;sel.appendChild(opt);});
       if(cur)sel.value=cur;
     }
     function renderAttendance(list){
@@ -332,8 +585,18 @@
       qs("attendanceCourseFilter").value=courseId;
       loadStudentAttendance();
     }
+
+    function showExamsForCourse(courseId){
+      showTab("exams");
+      const filtered=studentExamSessions.filter(e=>String(e.course_id)===String(courseId));
+      renderExams(filtered);
+      if(!filtered.length){
+        qs("exam-cards").innerHTML=`<div class="col-12"><div class="empty-state"><div class="empty-icon">📝</div><p>Học phần này chưa có ca thi nào</p></div></div>`;
+      }
+    }
     function updateStats(){
       qs("stat-courses").textContent=studentCourses.length;
+      if(qs("stat-exams"))qs("stat-exams").textContent=studentExamSessions.length;
       qs("stat-total-attendance").textContent=studentAttendance.length;
       const present=studentAttendance.filter(a=>a.recognized).length;
       qs("stat-present").textContent=present;
@@ -350,10 +613,21 @@
       if(attendanceChart)attendanceChart.destroy();
       attendanceChart=new Chart(ctx,{type:"bar",data:{labels:Object.keys(grouped),datasets:[{label:"Lượt điểm danh",data:Object.values(grouped),backgroundColor:"rgba(13,110,253,0.7)",borderRadius:6}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
     }
+    async function loadStudentProfile(){
+      try{
+        const profile=await fetchFirstAvailable([`/api/student/profile`,`/api/students/${encodeURIComponent(studentId)}`]);
+        if(qs("profile-admission-course"))qs("profile-admission-course").textContent=profile.admission_course||"—";
+        if(qs("profile-major"))qs("profile-major").textContent=profile.major||"—";
+      }catch(e){
+        console.warn("Không tải được profile mở rộng",e);
+      }
+    }
     document.addEventListener("DOMContentLoaded",async()=>{
       qs("profile-avatar").textContent=getInitials(studentName);
+      await loadStudentProfile();
       await loadStudentCourses();
       await loadStudentAttendance();
+      await loadStudentExams();
     });
   </script>
 </body>

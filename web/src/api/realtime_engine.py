@@ -521,7 +521,7 @@ class RealtimeEngine:
 
         try:
             logger.info(
-                "[REALTIME] Saving attendance sid=%s course_id=%s",
+                "[REALTIME] Mark attendance sid=%s course_id=%s",
                 sid,
                 course_id
             )
@@ -529,15 +529,39 @@ class RealtimeEngine:
             # Resize nhỏ cho nhẹ
             face = cv2.resize(face, (160, 160))
 
-            # Convert base64
-            face_base64 = image_to_base64(face)
+            handled_by_callback = False
+            callback_result = None
 
-            # Save DB
-            result = save_attendance(
-                student_id=sid,
-                course_id=course_id,
-                image_base64=face_base64
-            )
+            # Callback được gọi TRƯỚC khi lưu attendance mặc định.
+            # Nếu callback trả về True, engine sẽ KHÔNG lưu vào bảng attendance.
+            # Dùng cho ca thi: exam_api sẽ lưu vào exam_attendance và trả True.
+            if self.on_attendance:
+                try:
+                    callback_result = self.on_attendance(
+                        track=tr,
+                        course_id=course_id,
+                        face_img=face,
+                        timestamp=now
+                    )
+                    handled_by_callback = bool(callback_result)
+                except Exception:
+                    logger.exception("on_attendance failed")
+
+            if handled_by_callback:
+                result = {
+                    "handled_by": "on_attendance",
+                    "callback_result": callback_result
+                }
+            else:
+                # Convert base64
+                face_base64 = image_to_base64(face)
+
+                # Save DB điểm danh học phần bình thường
+                result = save_attendance(
+                    student_id=sid,
+                    course_id=course_id,
+                    image_base64=face_base64
+                )
 
             logger.info(
                 "[REALTIME] Attendance result sid=%s result=%s",
@@ -563,18 +587,6 @@ class RealtimeEngine:
             with self._lock:
                 self._realtime_events.append(event)
                 self._realtime_events = self._realtime_events[-100:]
-
-            # Callback
-            if self.on_attendance:
-                try:
-                    self.on_attendance(
-                        track=tr,
-                        course_id=course_id,
-                        face_img=face,
-                        timestamp=now
-                    )
-                except Exception:
-                    logger.exception("on_attendance failed")
 
         except Exception as e:
             logger.error(
